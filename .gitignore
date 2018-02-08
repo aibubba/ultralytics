@@ -30,3 +30,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Scratch/working files
+scratch/
