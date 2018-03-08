@@ -1,8 +1,9 @@
 const express = require('express');
 const db = require('./db');
+const config = require('./config');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
 
 // Parse JSON bodies
 app.use(express.json());
