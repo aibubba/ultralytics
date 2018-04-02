@@ -137,6 +137,52 @@
     },
 
     /**
+     * Track a page view
+     * @param {Object} properties - Additional page view properties
+     */
+    trackPageView: function(properties) {
+      var pageProps = {
+        url: window.location.href,
+        path: window.location.pathname,
+        title: document.title,
+        referrer: document.referrer || null
+      };
+
+      // Merge custom properties
+      if (properties) {
+        for (var key in properties) {
+          if (properties.hasOwnProperty(key)) {
+            pageProps[key] = properties[key];
+          }
+        }
+      }
+
+      this.track('page_view', pageProps);
+    },
+
+    /**
+     * Track a custom event (alias for track with event type)
+     * @param {string} eventName - Name of the event
+     * @param {Object} properties - Event properties
+     */
+    trackEvent: function(eventName, properties) {
+      var eventProps = {
+        eventType: 'custom'
+      };
+
+      // Merge custom properties
+      if (properties) {
+        for (var key in properties) {
+          if (properties.hasOwnProperty(key)) {
+            eventProps[key] = properties[key];
+          }
+        }
+      }
+
+      this.track(eventName, eventProps);
+    },
+
+    /**
      * Send data to the server
      */
     _send: function(path, data) {
