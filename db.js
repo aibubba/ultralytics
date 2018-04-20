@@ -32,14 +32,13 @@ async function close() {
 }
 
 // Store event in database
-// Note: timestamp is stored as string for now
 async function storeEvent(event) {
   const { name, properties, sessionId, timestamp } = event;
   
-  // Storing timestamp as VARCHAR for simplicity
+  // Store timestamp as proper TIMESTAMP type
   const result = await query(
     'INSERT INTO events (name, properties, session_id, timestamp) VALUES ($1, $2, $3, $4) RETURNING id',
-    [name, JSON.stringify(properties), sessionId, timestamp.toString()]
+    [name, JSON.stringify(properties), sessionId, timestamp]
   );
   
   return result.rows[0];
