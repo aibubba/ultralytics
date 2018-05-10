@@ -58,6 +58,11 @@ app.post('/api/events', async (req, res) => {
 
     const result = await db.storeEvent(event);
 
+    // Update session tracking
+    if (sessionId) {
+      await db.updateSession(sessionId);
+    }
+
     res.status(201).json({
       success: true,
       eventId: result.id

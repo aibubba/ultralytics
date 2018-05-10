@@ -44,9 +44,38 @@ async function storeEvent(event) {
   return result.rows[0];
 }
 
+// Update or create session
+async function updateSession(sessionId) {
+  if (!sessionId) return null;
+  
+  const result = await query(
+    `INSERT INTO sessions (id, started_at, last_activity_at, event_count)
+     VALUES ($1, NOW(), NOW(), 1)
+     ON CONFLICT (id) DO UPDATE SET
+       last_activity_at = NOW(),
+       event_count = sessions.event_count + 1
+     RETURNING *`,
+    [sessionId]
+  );
+  
+  return result.rows[0];
+}
+
+// Get session by ID
+async function getSession(sessionId) {
+  const result = await query(
+    'SELECT * FROM sessions WHERE id = $1',
+    [sessionId]
+  );
+  
+  return result.rows[0] || null;
+}
+
 module.exports = {
   connect,
   query,
   close,
-  storeEvent
+  storeEvent,
+  updateSession,
+  getSession
 };

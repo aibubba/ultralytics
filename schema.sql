@@ -10,3 +10,11 @@ CREATE TABLE IF NOT EXISTS events (
     timestamp TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Sessions table for tracking user sessions
+CREATE TABLE IF NOT EXISTS sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_activity_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    event_count INTEGER DEFAULT 0
+);
