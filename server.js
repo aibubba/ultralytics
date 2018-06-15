@@ -75,6 +75,69 @@ app.post('/api/events', async (req, res) => {
   }
 });
 
+// Query events endpoint
+app.get('/api/events', async (req, res) => {
+  try {
+    const { startDate, endDate, name, sessionId, limit = 100, offset = 0 } = req.query;
+
+    let queryText = 'SELECT * FROM events WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
+
+    // Filter by date range
+    if (startDate) {
+      paramCount++;
+      queryText += ` AND timestamp >= $${paramCount}`;
+      params.push(new Date(startDate));
+    }
+
+    if (endDate) {
+      paramCount++;
+      queryText += ` AND timestamp <= $${paramCount}`;
+      params.push(new Date(endDate));
+    }
+
+    // Filter by event name
+    if (name) {
+      paramCount++;
+      queryText += ` AND name = $${paramCount}`;
+      params.push(name);
+    }
+
+    // Filter by session ID
+    if (sessionId) {
+      paramCount++;
+      queryText += ` AND session_id = $${paramCount}`;
+      params.push(sessionId);
+    }
+
+    // Order and pagination
+    queryText += ' ORDER BY timestamp DESC';
+    
+    paramCount++;
+    queryText += ` LIMIT $${paramCount}`;
+    params.push(Math.min(parseInt(limit), 1000)); // Max 1000 results
+
+    paramCount++;
+    queryText += ` OFFSET $${paramCount}`;
+    params.push(parseInt(offset));
+
+    const result = await db.query(queryText, params);
+
+    res.json({
+      events: result.rows,
+      count: result.rows.length,
+      offset: parseInt(offset),
+      limit: parseInt(limit)
+    });
+  } catch (error) {
+    console.error('Error querying events:', error);
+    res.status(500).json({
+      error: 'Failed to query events'
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Ultralytics server running on port ${PORT}`);
