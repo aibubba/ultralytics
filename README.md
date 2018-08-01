@@ -1,5 +1,8 @@
 # Ultralytics
 
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Self-hosted analytics for web applications.
 
 ## Overview
@@ -98,10 +101,14 @@ Content-Type: application/json
 }
 ```
 
-## Status
+## Features
 
-🚧 Under development
+- **Privacy-focused**: All data stays on your servers
+- **Lightweight client**: Simple JavaScript library for browsers
+- **Session tracking**: Automatic session management with 30-minute timeout
+- **Event querying**: Filter events by date range, event name, or session
+- **Easy setup**: Docker support coming soon
 
 ## License
 
-MIT
+MIT - See [LICENSE](LICENSE) for details.
