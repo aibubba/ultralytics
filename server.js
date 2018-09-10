@@ -1,4 +1,5 @@
 const express = require('express');
+const morgan = require('morgan');
 const db = require('./db');
 const config = require('./config');
 
@@ -7,6 +8,9 @@ const PORT = config.port;
 
 // Parse JSON bodies
 app.use(express.json());
+
+// Request logging
+app.use(morgan('combined'));
 
 // TODO: Add rate limiting to prevent abuse
 
