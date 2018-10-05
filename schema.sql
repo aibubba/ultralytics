@@ -18,3 +18,13 @@ CREATE TABLE IF NOT EXISTS sessions (
     last_activity_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     event_count INTEGER DEFAULT 0
 );
+
+-- API keys table for authentication
+CREATE TABLE IF NOT EXISTS api_keys (
+    id SERIAL PRIMARY KEY,
+    key_hash VARCHAR(64) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
+);

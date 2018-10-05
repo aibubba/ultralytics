@@ -2,6 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const db = require('./db');
 const config = require('./config');
+const { validateApiKey } = require('./middleware/auth');
 
 const app = express();
 const PORT = config.port;
@@ -25,6 +26,9 @@ app.get('/health', (req, res) => {
     uptime: process.uptime()
   });
 });
+
+// Apply API key authentication to all /api routes
+app.use('/api', validateApiKey);
 
 // Event tracking endpoint
 app.post('/api/events', async (req, res) => {
