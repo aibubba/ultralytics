@@ -1,5 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const db = require('./db');
 const config = require('./config');
 const { validateApiKey } = require('./middleware/auth');
@@ -13,7 +14,16 @@ app.use(express.json());
 // Request logging
 app.use(morgan('combined'));
 
-// TODO: Add rate limiting to prevent abuse
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: {
+    error: 'Too many requests',
+    message: 'Please try again later'
+  }
+});
+app.use('/api', limiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

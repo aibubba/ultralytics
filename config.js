@@ -20,6 +20,14 @@ const config = {
     maxBatchSize: parseInt(process.env.MAX_BATCH_SIZE, 10) || 100,
   },
   
+  // Rate limiting configuration
+  rateLimit: {
+    // Time window in milliseconds
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 minutes
+    // Maximum requests per window
+    max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
+  },
+  
   // Logging configuration
   logging: {
     level: process.env.LOG_LEVEL || 'info',
