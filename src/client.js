@@ -11,6 +11,7 @@
     _sessionId: null,
     _sessionTimeout: 30 * 60 * 1000, // 30 minutes
     _lastActivity: null,
+    _boundHandlers: {},
 
     /**
      * Initialize the Ultralytics client
@@ -23,6 +24,12 @@
         return;
       }
 
+      // Clean up any existing listeners to prevent memory leaks
+      // This handles the case where init() is called multiple times
+      if (this._initialized) {
+        this._removeEventListeners();
+      }
+
       this._endpoint = options.endpoint.replace(/\/$/, '');
       this._initialized = true;
       this._lastActivity = Date.now();
@@ -31,18 +38,21 @@
       // Bug: This runs async and doesn't wait, causing potential race condition
       this._initSession();
 
-      // Track page visibility changes
-      // Bug: Event listeners are never removed (memory leak)
-      document.addEventListener('visibilitychange', function() {
+      // Store bound event handlers for cleanup
+      this._boundHandlers.visibilityChange = function() {
         if (document.visibilityState === 'visible') {
           Ultralytics._checkSession();
         }
-      });
+      };
+      this._boundHandlers.beforeUnload = function() {
+        Ultralytics._lastActivity = Date.now();
+      };
+
+      // Track page visibility changes
+      document.addEventListener('visibilitychange', this._boundHandlers.visibilityChange);
 
       // Track before unload
-      window.addEventListener('beforeunload', function() {
-        Ultralytics._lastActivity = Date.now();
-      });
+      window.addEventListener('beforeunload', this._boundHandlers.beforeUnload);
 
       console.log('Ultralytics initialized');
     },
@@ -158,6 +168,39 @@
       }
 
       this.track('page_view', pageProps);
+    },
+
+    /**
+     * Remove event listeners (internal helper)
+     */
+    _removeEventListeners: function() {
+      if (this._boundHandlers.visibilityChange) {
+        document.removeEventListener('visibilitychange', this._boundHandlers.visibilityChange);
+      }
+      if (this._boundHandlers.beforeUnload) {
+        window.removeEventListener('beforeunload', this._boundHandlers.beforeUnload);
+      }
+      this._boundHandlers = {};
+    },
+
+    /**
+     * Clean up event listeners and reset state
+     * Call this when removing the tracker
+     */
+    destroy: function() {
+      if (!this._initialized) {
+        return;
+      }
+
+      // Remove event listeners
+      this._removeEventListeners();
+
+      // Reset state
+      this._initialized = false;
+      this._endpoint = null;
+      this._sessionId = null;
+
+      console.log('Ultralytics destroyed');
     },
 
     /**
