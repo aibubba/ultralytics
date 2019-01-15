@@ -9,6 +9,7 @@
     _initialized: false,
     _endpoint: null,
     _sessionId: null,
+    _userId: null,
     _sessionTimeout: 30 * 60 * 1000, // 30 minutes
     _lastActivity: null,
     _boundHandlers: {},
@@ -37,6 +38,9 @@
       // Generate session ID
       // Bug: This runs async and doesn't wait, causing potential race condition
       this._initSession();
+
+      // Restore user ID from localStorage if available
+      this._restoreUserId();
 
       // Store bound event handlers for cleanup
       this._boundHandlers.visibilityChange = function() {
@@ -123,6 +127,20 @@
     },
 
     /**
+     * Restore user ID from localStorage
+     */
+    _restoreUserId: function() {
+      try {
+        var userId = localStorage.getItem('ultralytics_user_id');
+        if (userId) {
+          this._userId = userId;
+        }
+      } catch (e) {
+        // localStorage not available
+      }
+    },
+
+    /**
      * Track an event
      * @param {string} name - Event name
      * @param {Object} properties - Event properties
@@ -140,6 +158,7 @@
         name: name,
         properties: properties || {},
         sessionId: this._sessionId,
+        userId: this._userId,
         timestamp: new Date().toISOString()
       };
 
@@ -199,6 +218,7 @@
       this._initialized = false;
       this._endpoint = null;
       this._sessionId = null;
+      this._userId = null;
 
       console.log('Ultralytics destroyed');
     },
@@ -223,6 +243,59 @@
       }
 
       this.track(eventName, eventProps);
+    },
+
+    /**
+     * Identify a user
+     * @param {string} userId - Unique user identifier
+     * @param {Object} traits - Optional user traits/properties
+     */
+    identify: function(userId, traits) {
+      if (!this._initialized) {
+        console.error('Ultralytics: not initialized. Call init() first.');
+        return;
+      }
+
+      if (!userId) {
+        console.error('Ultralytics: userId is required for identify()');
+        return;
+      }
+
+      this._userId = userId;
+      
+      // Store user ID in localStorage for persistence
+      try {
+        localStorage.setItem('ultralytics_user_id', userId);
+      } catch (e) {
+        // localStorage not available
+      }
+
+      // Optionally track an identify event with user traits
+      if (traits) {
+        this.track('identify', traits);
+      }
+
+      console.log('Ultralytics: user identified', userId);
+    },
+
+    /**
+     * Get the current user ID
+     * @returns {string|null} The current user ID or null
+     */
+    getUserId: function() {
+      return this._userId;
+    },
+
+    /**
+     * Clear the current user (for logout scenarios)
+     */
+    clearUser: function() {
+      this._userId = null;
+      try {
+        localStorage.removeItem('ultralytics_user_id');
+      } catch (e) {
+        // localStorage not available
+      }
     },
 
     /**

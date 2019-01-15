@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS events (
     name VARCHAR(255) NOT NULL,
     properties JSONB,
     session_id VARCHAR(255),
+    user_id VARCHAR(255),
     -- Fixed: Now using proper TIMESTAMP type instead of VARCHAR
     timestamp TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

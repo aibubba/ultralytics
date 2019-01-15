@@ -43,7 +43,7 @@ app.use('/api', validateApiKey);
 // Event tracking endpoint
 app.post('/api/events', async (req, res) => {
   try {
-    const { name, properties, sessionId } = req.body;
+    const { name, properties, sessionId, userId } = req.body;
 
     // Basic validation
     if (!name || typeof name !== 'string') {
@@ -71,6 +71,7 @@ app.post('/api/events', async (req, res) => {
       name: name,
       properties: properties || {},
       sessionId: sessionId || null,
+      userId: userId || null,
       timestamp: new Date()
     };
 
@@ -96,7 +97,7 @@ app.post('/api/events', async (req, res) => {
 // Query events endpoint
 app.get('/api/events', async (req, res) => {
   try {
-    const { startDate, endDate, name, sessionId, limit = 100, offset = 0 } = req.query;
+    const { startDate, endDate, name, sessionId, userId, limit = 100, offset = 0 } = req.query;
 
     let queryText = 'SELECT * FROM events WHERE 1=1';
     const params = [];
@@ -127,6 +128,13 @@ app.get('/api/events', async (req, res) => {
       paramCount++;
       queryText += ` AND session_id = $${paramCount}`;
       params.push(sessionId);
+    }
+
+    // Filter by user ID
+    if (userId) {
+      paramCount++;
+      queryText += ` AND user_id = $${paramCount}`;
+      params.push(userId);
     }
 
     // Order and pagination
