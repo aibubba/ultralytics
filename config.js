@@ -28,6 +28,14 @@ const config = {
     max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
   },
   
+  // Data retention configuration
+  retention: {
+    // Number of days to keep events
+    days: parseInt(process.env.RETENTION_DAYS, 10) || 90,
+    // Cron schedule for cleanup job (default: 2am daily)
+    schedule: process.env.RETENTION_SCHEDULE || '0 2 * * *',
+  },
+  
   // Logging configuration
   logging: {
     level: process.env.LOG_LEVEL || 'info',

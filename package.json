@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "cleanup": "node scripts/cleanup.js",
+    "cleanup:cron": "node scripts/cleanup.js --cron",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,6 +29,7 @@
     "express": "4.16.2",
     "express-rate-limit": "3.3.2",
     "morgan": "1.9.1",
+    "node-cron": "2.0.3",
     "pg": "7.4.1"
   }
 }
