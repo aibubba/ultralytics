@@ -299,6 +299,74 @@
     },
 
     /**
+     * Track multiple events in a single request
+     * @param {Array} events - Array of event objects with name and optional properties
+     * @param {Function} callback - Optional callback(error, result)
+     */
+    trackBatch: function(events, callback) {
+      if (!this._initialized) {
+        var error = new Error('Ultralytics: not initialized. Call init() first.');
+        console.error(error.message);
+        if (callback) callback(error);
+        return;
+      }
+
+      if (!Array.isArray(events) || events.length === 0) {
+        var error = new Error('Ultralytics: events must be a non-empty array');
+        console.error(error.message);
+        if (callback) callback(error);
+        return;
+      }
+
+      this._lastActivity = Date.now();
+      this._storeSession();
+
+      // Prepare events with session and user info
+      var self = this;
+      var preparedEvents = events.map(function(event) {
+        return {
+          name: event.name,
+          properties: event.properties || {},
+          sessionId: self._sessionId,
+          userId: self._userId,
+          timestamp: event.timestamp || new Date().toISOString()
+        };
+      });
+
+      this._sendBatch(preparedEvents, callback);
+    },
+
+    /**
+     * Send batch data to the server
+     */
+    _sendBatch: function(events, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', this._endpoint + '/api/events/batch', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            if (callback) {
+              try {
+                var result = JSON.parse(xhr.responseText);
+                callback(null, result);
+              } catch (e) {
+                callback(null, { success: true });
+              }
+            }
+          } else {
+            var error = new Error('Failed to send batch: ' + xhr.status);
+            console.error('Ultralytics: failed to send batch', xhr.status);
+            if (callback) callback(error);
+          }
+        }
+      };
+
+      xhr.send(JSON.stringify({ events: events }));
+    },
+
+    /**
      * Send data to the server
      */
     _send: function(path, data) {

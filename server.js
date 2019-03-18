@@ -94,6 +94,80 @@ app.post('/api/events', async (req, res) => {
   }
 });
 
+// Batch event tracking endpoint
+app.post('/api/events/batch', async (req, res) => {
+  try {
+    const { events } = req.body;
+
+    // Validate events array
+    if (!Array.isArray(events)) {
+      return res.status(400).json({
+        error: 'events must be an array'
+      });
+    }
+
+    if (events.length === 0) {
+      return res.status(400).json({
+        error: 'events array cannot be empty'
+      });
+    }
+
+    // Validate each event
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      if (!event.name || typeof event.name !== 'string') {
+        return res.status(400).json({
+          error: `Event at index ${i} must have a valid name`
+        });
+      }
+      if (event.name.length > 255) {
+        return res.status(400).json({
+          error: `Event name at index ${i} must be 255 characters or less`
+        });
+      }
+    }
+
+    // Store all events
+    // BUG: For large batches (>1000), this can cause memory issues
+    // and some events may be silently dropped
+    const results = [];
+    const sessionsToUpdate = new Set();
+
+    for (const eventData of events) {
+      const event = {
+        name: eventData.name,
+        properties: eventData.properties || {},
+        sessionId: eventData.sessionId || null,
+        userId: eventData.userId || null,
+        timestamp: eventData.timestamp ? new Date(eventData.timestamp) : new Date()
+      };
+
+      const result = await db.storeEvent(event);
+      results.push(result.id);
+
+      if (eventData.sessionId) {
+        sessionsToUpdate.add(eventData.sessionId);
+      }
+    }
+
+    // Update sessions
+    for (const sessionId of sessionsToUpdate) {
+      await db.updateSession(sessionId);
+    }
+
+    res.status(201).json({
+      success: true,
+      eventIds: results,
+      count: results.length
+    });
+  } catch (error) {
+    console.error('Error storing batch events:', error);
+    res.status(500).json({
+      error: 'Failed to store batch events'
+    });
+  }
+});
+
 // Query events endpoint
 app.get('/api/events', async (req, res) => {
   try {
