@@ -4,6 +4,8 @@ const rateLimit = require('express-rate-limit');
 const db = require('./db');
 const config = require('./config');
 const { validateApiKey } = require('./middleware/auth');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { ValidationError, DatabaseError } = require('./errors');
 
 const app = express();
 const PORT = config.port;
@@ -41,28 +43,22 @@ app.get('/health', (req, res) => {
 app.use('/api', validateApiKey);
 
 // Event tracking endpoint
-app.post('/api/events', async (req, res) => {
+app.post('/api/events', async (req, res, next) => {
   try {
     const { name, properties, sessionId, userId } = req.body;
 
     // Basic validation
     if (!name || typeof name !== 'string') {
-      return res.status(400).json({
-        error: 'Event name is required and must be a string'
-      });
+      throw new ValidationError('Event name is required and must be a string', 'name');
     }
 
     if (name.length > 255) {
-      return res.status(400).json({
-        error: 'Event name must be 255 characters or less'
-      });
+      throw new ValidationError('Event name must be 255 characters or less', 'name');
     }
 
     // Properties are optional but must be an object if provided
     if (properties !== undefined && (typeof properties !== 'object' || Array.isArray(properties))) {
-      return res.status(400).json({
-        error: 'Properties must be an object'
-      });
+      throw new ValidationError('Properties must be an object', 'properties');
     }
 
     // Store the event
@@ -87,43 +83,32 @@ app.post('/api/events', async (req, res) => {
       eventId: result.id
     });
   } catch (error) {
-    console.error('Error storing event:', error);
-    res.status(500).json({
-      error: 'Failed to store event'
-    });
+    next(error);
   }
 });
 
 // Batch event tracking endpoint
-app.post('/api/events/batch', async (req, res) => {
+app.post('/api/events/batch', async (req, res, next) => {
   try {
     const { events } = req.body;
 
     // Validate events array
     if (!Array.isArray(events)) {
-      return res.status(400).json({
-        error: 'events must be an array'
-      });
+      throw new ValidationError('events must be an array', 'events');
     }
 
     if (events.length === 0) {
-      return res.status(400).json({
-        error: 'events array cannot be empty'
-      });
+      throw new ValidationError('events array cannot be empty', 'events');
     }
 
     // Validate each event
     for (let i = 0; i < events.length; i++) {
       const event = events[i];
       if (!event.name || typeof event.name !== 'string') {
-        return res.status(400).json({
-          error: `Event at index ${i} must have a valid name`
-        });
+        throw new ValidationError(`Event at index ${i} must have a valid name`, `events[${i}].name`);
       }
       if (event.name.length > 255) {
-        return res.status(400).json({
-          error: `Event name at index ${i} must be 255 characters or less`
-        });
+        throw new ValidationError(`Event name at index ${i} must be 255 characters or less`, `events[${i}].name`);
       }
     }
 
@@ -161,15 +146,12 @@ app.post('/api/events/batch', async (req, res) => {
       count: results.length
     });
   } catch (error) {
-    console.error('Error storing batch events:', error);
-    res.status(500).json({
-      error: 'Failed to store batch events'
-    });
+    next(error);
   }
 });
 
 // Query events endpoint
-app.get('/api/events', async (req, res) => {
+app.get('/api/events', async (req, res, next) => {
   try {
     const { startDate, endDate, name, sessionId, userId, limit = 100, offset = 0 } = req.query;
 
@@ -231,12 +213,15 @@ app.get('/api/events', async (req, res) => {
       limit: parseInt(limit)
     });
   } catch (error) {
-    console.error('Error querying events:', error);
-    res.status(500).json({
-      error: 'Failed to query events'
-    });
+    next(error);
   }
 });
+
+// 404 handler for unknown routes
+app.use(notFoundHandler);
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
