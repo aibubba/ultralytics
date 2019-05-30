@@ -12,6 +12,17 @@ const config = {
   // Database configuration
   database: {
     url: process.env.DATABASE_URL || 'postgresql://localhost:5432/ultralytics',
+    // Connection pool configuration
+    pool: {
+      // Maximum number of clients in the pool
+      max: parseInt(process.env.DB_POOL_MAX, 10) || 20,
+      // Minimum number of idle clients
+      min: parseInt(process.env.DB_POOL_MIN, 10) || 2,
+      // How long a client is allowed to remain idle before being closed (ms)
+      idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT, 10) || 30000,
+      // How long to wait for a client to become available (ms)
+      connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT, 10) || 2000,
+    },
   },
   
   // API configuration

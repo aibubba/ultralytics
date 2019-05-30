@@ -1,34 +1,70 @@
-const { Client } = require('pg');
+const { Pool } = require('pg');
+const config = require('./config');
 
-// Database connection configuration
-const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/ultralytics';
+// Create connection pool
+const pool = new Pool({
+  connectionString: config.database.url,
+  max: config.database.pool.max,
+  min: config.database.pool.min,
+  idleTimeoutMillis: config.database.pool.idleTimeoutMillis,
+  connectionTimeoutMillis: config.database.pool.connectionTimeoutMillis,
+});
 
-let client = null;
+// Log pool events in development
+pool.on('connect', () => {
+  console.log('New client connected to pool');
+});
 
-async function connect() {
-  if (client) {
-    return client;
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+});
+
+/**
+ * Execute a query using the connection pool
+ * @param {string} text - SQL query text
+ * @param {Array} params - Query parameters
+ * @returns {Promise<Object>} Query result
+ */
+async function query(text, params) {
+  const start = Date.now();
+  const result = await pool.query(text, params);
+  const duration = Date.now() - start;
+  
+  // Log slow queries in development
+  if (duration > 100) {
+    console.log('Slow query:', { text, duration, rows: result.rowCount });
   }
+  
+  return result;
+}
 
-  client = new Client({
-    connectionString: connectionString
-  });
-
-  await client.connect();
-  console.log('Connected to PostgreSQL database');
+/**
+ * Get a client from the pool for transactions
+ * @returns {Promise<Object>} Pool client
+ */
+async function getClient() {
+  const client = await pool.connect();
   return client;
 }
 
-async function query(text, params) {
-  const db = await connect();
-  return db.query(text, params);
+/**
+ * Close all pool connections
+ */
+async function close() {
+  await pool.end();
+  console.log('Database pool closed');
 }
 
-async function close() {
-  if (client) {
-    await client.end();
-    client = null;
-  }
+/**
+ * Get pool statistics
+ * @returns {Object} Pool stats
+ */
+function getPoolStats() {
+  return {
+    totalCount: pool.totalCount,
+    idleCount: pool.idleCount,
+    waitingCount: pool.waitingCount,
+  };
 }
 
 // Store event in database
@@ -72,9 +108,10 @@ async function getSession(sessionId) {
 }
 
 module.exports = {
-  connect,
   query,
+  getClient,
   close,
+  getPoolStats,
   storeEvent,
   updateSession,
   getSession
