@@ -28,15 +28,39 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  // Using string timestamp for simplicity (we can improve this later)
-  const timestamp = new Date().toString();
+app.get('/health', async (req, res) => {
+  const timestamp = new Date().toISOString();
   
-  res.json({
-    status: 'ok',
+  // Check database connectivity
+  let dbStatus = 'unknown';
+  let dbLatency = null;
+  
+  try {
+    const start = Date.now();
+    await db.query('SELECT 1');
+    dbLatency = Date.now() - start;
+    dbStatus = 'connected';
+  } catch (error) {
+    dbStatus = 'disconnected';
+    console.error('Database health check failed:', error.message);
+  }
+  
+  // Get pool stats if available
+  const poolStats = db.getPoolStats ? db.getPoolStats() : null;
+  
+  const health = {
+    status: dbStatus === 'connected' ? 'ok' : 'degraded',
     timestamp: timestamp,
-    uptime: process.uptime()
-  });
+    uptime: process.uptime(),
+    database: {
+      status: dbStatus,
+      latencyMs: dbLatency,
+      pool: poolStats
+    }
+  };
+  
+  const statusCode = dbStatus === 'connected' ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
 // Apply API key authentication to all /api routes
