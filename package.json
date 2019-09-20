@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/aibubba/ultralytics#readme",
   "dependencies": {
+    "ajv": "6.10.2",
     "dotenv": "8.0.0",
     "express": "4.17.1",
     "express-rate-limit": "5.0.0",

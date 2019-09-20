@@ -6,6 +6,7 @@ const config = require('./config');
 const { validateApiKey } = require('./middleware/auth');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { ValidationError, DatabaseError } = require('./errors');
+const { validateEventData, validateBatchEventData } = require('./validation');
 
 const app = express();
 const PORT = config.port;
@@ -71,18 +72,10 @@ app.post('/api/events', async (req, res, next) => {
   try {
     const { name, properties, sessionId, userId } = req.body;
 
-    // Basic validation
-    if (!name || typeof name !== 'string') {
-      throw new ValidationError('Event name is required and must be a string', 'name');
-    }
-
-    if (name.length > 255) {
-      throw new ValidationError('Event name must be 255 characters or less', 'name');
-    }
-
-    // Properties are optional but must be an object if provided
-    if (properties !== undefined && (typeof properties !== 'object' || Array.isArray(properties))) {
-      throw new ValidationError('Properties must be an object', 'properties');
+    // Schema validation
+    const validation = validateEventData(req.body);
+    if (!validation.valid) {
+      throw new ValidationError(validation.errors);
     }
 
     // Store the event
@@ -116,24 +109,10 @@ app.post('/api/events/batch', async (req, res, next) => {
   try {
     const { events } = req.body;
 
-    // Validate events array
-    if (!Array.isArray(events)) {
-      throw new ValidationError('events must be an array', 'events');
-    }
-
-    if (events.length === 0) {
-      throw new ValidationError('events array cannot be empty', 'events');
-    }
-
-    // Validate each event
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (!event.name || typeof event.name !== 'string') {
-        throw new ValidationError(`Event at index ${i} must have a valid name`, `events[${i}].name`);
-      }
-      if (event.name.length > 255) {
-        throw new ValidationError(`Event name at index ${i} must be 255 characters or less`, `events[${i}].name`);
-      }
+    // Schema validation
+    const validation = validateBatchEventData(req.body);
+    if (!validation.valid) {
+      throw new ValidationError(validation.errors);
     }
 
     // Store all events
