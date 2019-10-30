@@ -12,6 +12,13 @@ CREATE TABLE IF NOT EXISTS events (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_events_name ON events(name);
+CREATE INDEX IF NOT EXISTS idx_events_session_id ON events(session_id);
+CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
+CREATE INDEX IF NOT EXISTS idx_events_timestamp_name ON events(timestamp, name);
+
 -- Sessions table for tracking user sessions
 CREATE TABLE IF NOT EXISTS sessions (
     id VARCHAR(255) PRIMARY KEY,
@@ -19,6 +26,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     last_activity_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     event_count INTEGER DEFAULT 0
 );
+
+-- Index for session lookups by activity
+CREATE INDEX IF NOT EXISTS idx_sessions_last_activity ON sessions(last_activity_at);
 
 -- API keys table for authentication
 CREATE TABLE IF NOT EXISTS api_keys (
