@@ -45,6 +45,40 @@ cp .env.example .env
 npm start
 ```
 
+### Docker Setup
+
+The easiest way to get started is with Docker:
+
+1. Clone the repository:
+```bash
+git clone https://github.com/aibubba/ultralytics.git
+cd ultralytics
+```
+
+2. Start the services:
+```bash
+docker-compose up -d
+```
+
+This will start:
+- The Ultralytics server on port 3000
+- PostgreSQL database on port 5432
+
+3. Verify it's running:
+```bash
+curl http://localhost:3000/health
+```
+
+To stop the services:
+```bash
+docker-compose down
+```
+
+To stop and remove all data:
+```bash
+docker-compose down -v
+```
+
 ### Client Setup
 
 Include the client library in your HTML:
@@ -107,7 +141,7 @@ Content-Type: application/json
 - **Lightweight client**: Simple JavaScript library for browsers
 - **Session tracking**: Automatic session management with 30-minute timeout
 - **Event querying**: Filter events by date range, event name, or session
-- **Easy setup**: Docker support coming soon
+- **Easy setup**: Docker and docker-compose included
 
 ## License
 
