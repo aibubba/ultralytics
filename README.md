@@ -101,6 +101,30 @@ Configuration is done via environment variables. See `.env.example` for all avai
 - `MAX_BATCH_SIZE` - Maximum events per batch request (default: 100)
 - `LOG_LEVEL` - Logging level (default: info)
 
+## Database Migrations
+
+Ultralytics uses [node-pg-migrate](https://github.com/salsita/node-pg-migrate) for database migrations.
+
+### Running Migrations
+
+Apply all pending migrations:
+```bash
+npm run migrate:up
+```
+
+Rollback the last migration:
+```bash
+npm run migrate:down
+```
+
+### Creating a New Migration
+
+```bash
+npm run migrate create my_migration_name
+```
+
+This creates a new migration file in the `migrations/` directory.
+
 ## Basic Usage
 
 ### Tracking Events

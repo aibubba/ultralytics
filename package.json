@@ -7,6 +7,9 @@
     "start": "node server.js",
     "cleanup": "node scripts/cleanup.js",
     "cleanup:cron": "node scripts/cleanup.js --cron",
+    "migrate": "node-pg-migrate",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -31,6 +34,7 @@
     "express-rate-limit": "5.0.0",
     "morgan": "1.9.1",
     "node-cron": "2.0.3",
+    "node-pg-migrate": "4.2.3",
     "pg": "7.12.1"
   }
 }
