@@ -1,4 +1,9 @@
 -- Ultralytics Schema
+-- 
+-- NOTE: This file is kept for reference only.
+-- The canonical schema is now managed via migrations in the migrations/ directory.
+-- To set up the database, run: npm run migrate:up
+--
 -- Initial database schema for event tracking
 
 CREATE TABLE IF NOT EXISTS events (
