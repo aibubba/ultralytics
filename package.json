@@ -10,7 +10,7 @@
     "migrate": "node-pg-migrate",
     "migrate:up": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -36,5 +36,9 @@
     "node-cron": "2.0.3",
     "node-pg-migrate": "4.2.3",
     "pg": "7.12.1"
+  },
+  "devDependencies": {
+    "jest": "25.5.4",
+    "supertest": "4.0.2"
   }
 }
