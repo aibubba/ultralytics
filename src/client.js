@@ -32,12 +32,14 @@
       }
 
       this._endpoint = options.endpoint.replace(/\/$/, '');
-      this._initialized = true;
       this._lastActivity = Date.now();
 
-      // Generate session ID
-      // Bug: This runs async and doesn't wait, causing potential race condition
+      // Initialize session synchronously to avoid race conditions
+      // where track() might be called before sessionId is set
       this._initSession();
+
+      // Only mark as initialized after session is ready
+      this._initialized = true;
 
       // Restore user ID from localStorage if available
       this._restoreUserId();
@@ -149,6 +151,12 @@
       if (!this._initialized) {
         console.error('Ultralytics: not initialized. Call init() first.');
         return;
+      }
+
+      // Ensure we have a session ID (defensive check)
+      if (!this._sessionId) {
+        this._sessionId = this._generateId();
+        this._storeSession();
       }
 
       this._lastActivity = Date.now();
