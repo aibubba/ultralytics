@@ -15,7 +15,8 @@ pids
 coverage/
 
 # Build output
-dist/
+dist/*
+!dist/ultralytics.min.js
 
 # Environment files
 .env

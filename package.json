@@ -3,8 +3,10 @@
   "version": "0.2.0",
   "description": "Self-hosted analytics for web applications",
   "main": "index.js",
+  "browser": "dist/ultralytics.min.js",
   "scripts": {
     "start": "node server.js",
+    "build": "rollup -c",
     "cleanup": "node scripts/cleanup.js",
     "cleanup:cron": "node scripts/cleanup.js --cron",
     "migrate": "node-pg-migrate",
@@ -40,6 +42,8 @@
   "devDependencies": {
     "jest": "25.5.4",
     "jest-environment-jsdom": "25.5.0",
+    "rollup": "2.26.5",
+    "rollup-plugin-terser": "7.0.0",
     "supertest": "4.0.2"
   }
 }
