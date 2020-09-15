@@ -125,6 +125,30 @@ npm run migrate create my_migration_name
 
 This creates a new migration file in the `migrations/` directory.
 
+## Database Backups
+
+Ultralytics includes a backup script for PostgreSQL databases.
+
+### Running a Backup
+
+```bash
+# Set your database URL
+export DATABASE_URL=postgres://user:password@localhost:5432/ultralytics
+
+# Run the backup
+./scripts/backup.sh
+
+# Or specify a custom output directory
+./scripts/backup.sh /path/to/backups
+```
+
+### Backup Configuration
+
+- `DATABASE_URL` - PostgreSQL connection string (required)
+- `BACKUP_RETENTION_DAYS` - Days to keep backups (default: 7)
+
+Backups are automatically compressed with gzip and old backups are cleaned up based on the retention policy.
+
 ## Basic Usage
 
 ### Tracking Events
