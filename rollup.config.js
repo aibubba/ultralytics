@@ -6,12 +6,14 @@ export default {
     {
       file: 'dist/ultralytics.js',
       format: 'umd',
-      name: 'Ultralytics'
+      name: 'Ultralytics',
+      sourcemap: true
     },
     {
       file: 'dist/ultralytics.min.js',
       format: 'umd',
       name: 'Ultralytics',
+      sourcemap: true,
       plugins: [terser()]
     }
   ]
