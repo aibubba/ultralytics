@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2020-12-15
+
+### Added
+- Dockerfile for containerized deployment
+- Docker Compose configuration for local development
+- Database migrations system using node-pg-migrate
+- Jest test suite with server and client tests
+- GitHub Actions CI pipeline
+- Minified client build with source maps
+- Database backup script with retention policy
+
+### Changed
+- Updated to Node.js 14 LTS
+- Updated dependencies for security and performance
+
+### Fixed
+- Race condition in client session tracking
+
 ## [0.2.0] - 2019-12-05
 
 ### Added

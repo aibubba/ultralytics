@@ -1,7 +1,8 @@
 # Ultralytics
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/aibubba/ultralytics/workflows/Tests/badge.svg)](https://github.com/aibubba/ultralytics/actions)
 
 Self-hosted analytics for web applications.
 
@@ -148,6 +149,28 @@ export DATABASE_URL=postgres://user:password@localhost:5432/ultralytics
 - `BACKUP_RETENTION_DAYS` - Days to keep backups (default: 7)
 
 Backups are automatically compressed with gzip and old backups are cleaned up based on the retention policy.
+
+## Testing
+
+Ultralytics uses Jest for testing. Tests include server API tests and client library tests.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+### Test Requirements
+
+Tests require a PostgreSQL database. Set the `DATABASE_URL` environment variable:
+
+```bash
+export DATABASE_URL=postgres://user:password@localhost:5432/ultralytics_test
+```
 
 ## Basic Usage
 
