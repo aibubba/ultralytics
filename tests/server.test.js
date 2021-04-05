@@ -1,7 +1,7 @@
 const request = require('supertest');
 
 // Mock the database module before requiring the server
-jest.mock('../db', () => ({
+jest.mock('../dist/db', () => ({
   query: jest.fn(),
   storeEvent: jest.fn(),
   updateSession: jest.fn(),
@@ -9,12 +9,12 @@ jest.mock('../db', () => ({
 }));
 
 // Mock the auth middleware to allow all requests in tests
-jest.mock('../middleware/auth', () => ({
+jest.mock('../dist/middleware/auth', () => ({
   validateApiKey: (req, res, next) => next()
 }));
 
-const app = require('../server');
-const db = require('../db');
+const app = require('../dist/server').default;
+const db = require('../dist/db');
 
 describe('Ultralytics API', () => {
   beforeEach(() => {
@@ -176,7 +176,7 @@ describe('Ultralytics API', () => {
         .get('/unknown-route')
         .expect(404);
 
-      expect(response.body.error).toBe('Not Found');
+      expect(response.body.error).toBe('NOT_FOUND');
     });
   });
 });

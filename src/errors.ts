@@ -3,20 +3,31 @@
  */
 
 // Error codes
-const ErrorCodes = {
+export const ErrorCodes = {
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   NOT_FOUND: 'NOT_FOUND',
   UNAUTHORIZED: 'UNAUTHORIZED',
   RATE_LIMITED: 'RATE_LIMITED',
   DATABASE_ERROR: 'DATABASE_ERROR',
   INTERNAL_ERROR: 'INTERNAL_ERROR'
-};
+} as const;
+
+export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
+
+export interface ErrorJSON {
+  error: ErrorCode;
+  message: string;
+  field?: string;
+}
 
 /**
  * Base error class for Ultralytics
  */
-class UltralyticsError extends Error {
-  constructor(message, code, statusCode = 500) {
+export class UltralyticsError extends Error {
+  public code: ErrorCode;
+  public statusCode: number;
+
+  constructor(message: string, code: ErrorCode, statusCode: number = 500) {
     super(message);
     this.name = 'UltralyticsError';
     this.code = code;
@@ -24,7 +35,7 @@ class UltralyticsError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 
-  toJSON() {
+  toJSON(): ErrorJSON {
     return {
       error: this.code,
       message: this.message
@@ -32,17 +43,20 @@ class UltralyticsError extends Error {
   }
 }
 
+
 /**
  * Validation error (400)
  */
-class ValidationError extends UltralyticsError {
-  constructor(message, field = null) {
+export class ValidationError extends UltralyticsError {
+  public field: string | null;
+
+  constructor(message: string, field: string | null = null) {
     super(message, ErrorCodes.VALIDATION_ERROR, 400);
     this.name = 'ValidationError';
     this.field = field;
   }
 
-  toJSON() {
+  toJSON(): ErrorJSON {
     const json = super.toJSON();
     if (this.field) {
       json.field = this.field;
@@ -54,8 +68,8 @@ class ValidationError extends UltralyticsError {
 /**
  * Not found error (404)
  */
-class NotFoundError extends UltralyticsError {
-  constructor(message = 'Resource not found') {
+export class NotFoundError extends UltralyticsError {
+  constructor(message: string = 'Resource not found') {
     super(message, ErrorCodes.NOT_FOUND, 404);
     this.name = 'NotFoundError';
   }
@@ -64,8 +78,8 @@ class NotFoundError extends UltralyticsError {
 /**
  * Unauthorized error (401)
  */
-class UnauthorizedError extends UltralyticsError {
-  constructor(message = 'Unauthorized') {
+export class UnauthorizedError extends UltralyticsError {
+  constructor(message: string = 'Unauthorized') {
     super(message, ErrorCodes.UNAUTHORIZED, 401);
     this.name = 'UnauthorizedError';
   }
@@ -74,18 +88,9 @@ class UnauthorizedError extends UltralyticsError {
 /**
  * Database error (500)
  */
-class DatabaseError extends UltralyticsError {
-  constructor(message = 'Database error occurred') {
+export class DatabaseError extends UltralyticsError {
+  constructor(message: string = 'Database error occurred') {
     super(message, ErrorCodes.DATABASE_ERROR, 500);
     this.name = 'DatabaseError';
   }
 }
-
-module.exports = {
-  ErrorCodes,
-  UltralyticsError,
-  ValidationError,
-  NotFoundError,
-  UnauthorizedError,
-  DatabaseError
-};

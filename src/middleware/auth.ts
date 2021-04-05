@@ -1,18 +1,31 @@
-const crypto = require('crypto');
-const db = require('../db');
+import crypto from 'crypto';
+import { Request, Response, NextFunction } from 'express';
+import * as db from '../db';
+
+export interface AuthenticatedRequest extends Request {
+  apiKey?: {
+    id: number;
+    name: string;
+  };
+}
 
 /**
  * Validate API key from request header
  * API key should be sent in the X-API-Key header
  */
-async function validateApiKey(req, res, next) {
-  const apiKey = req.headers['x-api-key'];
+export async function validateApiKey(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  const apiKey = req.headers['x-api-key'] as string | undefined;
 
   if (!apiKey) {
-    return res.status(401).json({
+    res.status(401).json({
       error: 'API key is required',
       message: 'Please provide an API key in the X-API-Key header'
     });
+    return;
   }
 
   try {
@@ -28,10 +41,11 @@ async function validateApiKey(req, res, next) {
     );
 
     if (result.rows.length === 0) {
-      return res.status(403).json({
+      res.status(403).json({
         error: 'Invalid API key',
         message: 'The provided API key is invalid or has been revoked'
       });
+      return;
     }
 
     // Update last used timestamp
@@ -49,13 +63,9 @@ async function validateApiKey(req, res, next) {
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return res.status(500).json({
+    res.status(500).json({
       error: 'Authentication error',
       message: 'Failed to validate API key'
     });
   }
 }
-
-module.exports = {
-  validateApiKey
-};

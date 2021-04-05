@@ -6,7 +6,7 @@
  */
 
 const crypto = require('crypto');
-const db = require('../db');
+const db = require('../dist/db');
 
 async function generateApiKey(name) {
   if (!name) {

@@ -1,12 +1,12 @@
-const express = require('express');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const db = require('./db');
-const config = require('./config');
-const { validateApiKey } = require('./middleware/auth');
-const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
-const { ValidationError, DatabaseError } = require('./errors');
-const { validateEventData, validateBatchEventData } = require('./validation');
+import express, { Request, Response, NextFunction } from 'express';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import * as db from './db';
+import config from './config';
+import { validateApiKey, AuthenticatedRequest } from './middleware/auth';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { ValidationError } from './errors';
+import { validateEventData, validateBatchEventData } from './validation';
 
 const app = express();
 const PORT = config.port;
@@ -29,13 +29,14 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Health check endpoint
-app.get('/health', async (req, res) => {
+app.get('/health', async (_req: Request, res: Response) => {
   const timestamp = new Date().toISOString();
-  
+
   // Check database connectivity
   let dbStatus = 'unknown';
-  let dbLatency = null;
-  
+  let dbLatency: number | null = null;
+
+
   try {
     const start = Date.now();
     await db.query('SELECT 1');
@@ -43,12 +44,12 @@ app.get('/health', async (req, res) => {
     dbStatus = 'connected';
   } catch (error) {
     dbStatus = 'disconnected';
-    console.error('Database health check failed:', error.message);
+    console.error('Database health check failed:', (error as Error).message);
   }
-  
-  // Get pool stats if available
-  const poolStats = db.getPoolStats ? db.getPoolStats() : null;
-  
+
+  // Get pool stats
+  const poolStats = db.getPoolStats();
+
   const health = {
     status: dbStatus === 'connected' ? 'ok' : 'degraded',
     timestamp: timestamp,
@@ -59,7 +60,7 @@ app.get('/health', async (req, res) => {
       pool: poolStats
     }
   };
-  
+
   const statusCode = dbStatus === 'connected' ? 200 : 503;
   res.status(statusCode).json(health);
 });
@@ -68,15 +69,16 @@ app.get('/health', async (req, res) => {
 app.use('/api', validateApiKey);
 
 // Event tracking endpoint
-app.post('/api/events', async (req, res, next) => {
+app.post('/api/events', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, properties, sessionId, userId } = req.body;
 
     // Schema validation
     const validation = validateEventData(req.body);
     if (!validation.valid) {
-      throw new ValidationError(validation.errors);
+      throw new ValidationError(validation.errors || 'Validation failed');
     }
+
 
     // Store the event
     // Note: properties are stored as-is without sanitization
@@ -105,21 +107,22 @@ app.post('/api/events', async (req, res, next) => {
 });
 
 // Batch event tracking endpoint
-app.post('/api/events/batch', async (req, res, next) => {
+app.post('/api/events/batch', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { events } = req.body;
 
     // Schema validation
     const validation = validateBatchEventData(req.body);
     if (!validation.valid) {
-      throw new ValidationError(validation.errors);
+      throw new ValidationError(validation.errors || 'Validation failed');
     }
 
     // Store all events
     // BUG: For large batches (>1000), this can cause memory issues
     // and some events may be silently dropped
-    const results = [];
-    const sessionsToUpdate = new Set();
+    const results: number[] = [];
+    const sessionsToUpdate = new Set<string>();
+
 
     for (const eventData of events) {
       const event = {
@@ -154,25 +157,28 @@ app.post('/api/events/batch', async (req, res, next) => {
 });
 
 // Query events endpoint
-app.get('/api/events', async (req, res, next) => {
+app.get('/api/events', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { startDate, endDate, name, sessionId, userId, limit = 100, offset = 0 } = req.query;
+    const { startDate, endDate, name, sessionId, userId } = req.query;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+    const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
 
     let queryText = 'SELECT * FROM events WHERE 1=1';
-    const params = [];
+    const params: unknown[] = [];
     let paramCount = 0;
+
 
     // Filter by date range
     if (startDate) {
       paramCount++;
       queryText += ` AND timestamp >= $${paramCount}`;
-      params.push(new Date(startDate));
+      params.push(new Date(startDate as string));
     }
 
     if (endDate) {
       paramCount++;
       queryText += ` AND timestamp <= $${paramCount}`;
-      params.push(new Date(endDate));
+      params.push(new Date(endDate as string));
     }
 
     // Filter by event name
@@ -198,22 +204,22 @@ app.get('/api/events', async (req, res, next) => {
 
     // Order and pagination
     queryText += ' ORDER BY timestamp DESC';
-    
+
     paramCount++;
     queryText += ` LIMIT $${paramCount}`;
-    params.push(Math.min(parseInt(limit), 1000)); // Max 1000 results
+    params.push(Math.min(limit, 1000)); // Max 1000 results
 
     paramCount++;
     queryText += ` OFFSET $${paramCount}`;
-    params.push(parseInt(offset));
+    params.push(offset);
 
     const result = await db.query(queryText, params);
 
     res.json({
       events: result.rows,
       count: result.rows.length,
-      offset: parseInt(offset),
-      limit: parseInt(limit)
+      offset: offset,
+      limit: limit
     });
   } catch (error) {
     next(error);
@@ -227,8 +233,10 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Ultralytics server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Ultralytics server running on port ${PORT}`);
+  });
+}
 
-module.exports = app;
+export default app;

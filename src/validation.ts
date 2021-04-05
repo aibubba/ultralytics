@@ -2,7 +2,8 @@
  * Event property validation using JSON Schema
  */
 
-const Ajv = require('ajv');
+import Ajv, { ErrorObject, ValidateFunction } from 'ajv';
+
 const ajv = new Ajv({ allErrors: true });
 
 // Schema for event properties
@@ -14,7 +15,7 @@ const eventPropertiesSchema = {
       { type: 'number' },
       { type: 'boolean' },
       { type: 'null' },
-      { 
+      {
         type: 'array',
         items: {
           anyOf: [
@@ -31,7 +32,7 @@ const eventPropertiesSchema = {
 };
 
 // Schema for a single event
-const eventSchema = {
+export const eventSchema = {
   type: 'object',
   required: ['name'],
   properties: {
@@ -58,8 +59,9 @@ const eventSchema = {
   additionalProperties: false
 };
 
+
 // Schema for batch events
-const batchEventSchema = {
+export const batchEventSchema = {
   type: 'object',
   required: ['events'],
   properties: {
@@ -74,15 +76,19 @@ const batchEventSchema = {
 };
 
 // Compile validators
-const validateEvent = ajv.compile(eventSchema);
-const validateBatchEvents = ajv.compile(batchEventSchema);
+const validateEvent: ValidateFunction = ajv.compile(eventSchema);
+const validateBatchEvents: ValidateFunction = ajv.compile(batchEventSchema);
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string | null;
+}
 
 /**
  * Format AJV errors into readable messages
- * @param {Array} errors - AJV error objects
- * @returns {string} Formatted error message
  */
-function formatErrors(errors) {
+function formatErrors(errors: ErrorObject[] | null | undefined): string {
+  if (!errors) return '';
   return errors.map(err => {
     const path = err.instancePath || 'root';
     return `${path}: ${err.message}`;
@@ -91,10 +97,8 @@ function formatErrors(errors) {
 
 /**
  * Validate a single event
- * @param {Object} event - Event data
- * @returns {Object} { valid: boolean, errors: string|null }
  */
-function validateEventData(event) {
+export function validateEventData(event: unknown): ValidationResult {
   const valid = validateEvent(event);
   return {
     valid,
@@ -104,10 +108,8 @@ function validateEventData(event) {
 
 /**
  * Validate batch events
- * @param {Object} data - Batch event data
- * @returns {Object} { valid: boolean, errors: string|null }
  */
-function validateBatchEventData(data) {
+export function validateBatchEventData(data: unknown): ValidationResult {
   const valid = validateBatchEvents(data);
   return {
     valid,
@@ -118,10 +120,3 @@ function validateBatchEventData(data) {
 // Note: This validation does NOT sanitize HTML content in string properties.
 // Raw string values are passed through as-is, which could be a security concern
 // if these values are rendered in a web interface without proper escaping.
-
-module.exports = {
-  validateEventData,
-  validateBatchEventData,
-  eventSchema,
-  batchEventSchema
-};

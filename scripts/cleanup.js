@@ -10,8 +10,8 @@
  */
 
 const cron = require('node-cron');
-const db = require('../db');
-const config = require('../config');
+const db = require('../dist/db');
+const config = require('../dist/config').default;
 
 async function cleanup() {
   const retentionDays = config.retention.days;
