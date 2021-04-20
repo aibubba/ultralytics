@@ -1,7 +1,22 @@
 version: '3.8'
 
 services:
-  server:
+  nginx:
+    image: nginx:1.21-alpine
+    restart: always
+    ports:
+      - "${PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api:
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,8 +27,8 @@ services:
       - API_KEY_REQUIRED=true
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
       - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
-    ports:
-      - "${PORT:-3000}:3000"
+    expose:
+      - "3000"
     depends_on:
       postgres:
         condition: service_healthy
