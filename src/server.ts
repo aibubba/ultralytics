@@ -1,12 +1,18 @@
 import express, { Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
 import * as db from './db';
 import config from './config';
 import { validateApiKey, AuthenticatedRequest } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { ValidationError } from './errors';
 import { validateEventData, validateBatchEventData } from './validation';
+
+// Load OpenAPI specification
+const swaggerDocument = YAML.load(path.join(__dirname, '../docs/openapi.yaml'));
 
 const app = express();
 const PORT = config.port;
@@ -27,6 +33,12 @@ const limiter = rateLimit({
   }
 });
 app.use('/api', limiter);
+
+// API Documentation
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Ultralytics API Documentation'
+}));
 
 // Health check endpoint
 app.get('/health', async (_req: Request, res: Response) => {
