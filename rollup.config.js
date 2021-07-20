@@ -20,6 +20,19 @@ export default {
       exports: 'named',
       globals: {},
       plugins: [terser()]
+    },
+    {
+      file: 'dist/ultralytics.esm.js',
+      format: 'es',
+      sourcemap: true,
+      exports: 'named'
+    },
+    {
+      file: 'dist/ultralytics.esm.min.js',
+      format: 'es',
+      sourcemap: true,
+      exports: 'named',
+      plugins: [terser()]
     }
   ],
   plugins: [
