@@ -80,6 +80,36 @@ To stop and remove all data:
 docker-compose down -v
 ```
 
+### Kubernetes Deployment
+
+For production deployments, Kubernetes manifests are provided in the `k8s/` directory.
+
+1. Create your secrets file:
+```bash
+cp k8s/secret.yaml.example k8s/secret.yaml
+# Edit k8s/secret.yaml with your credentials
+```
+
+2. Apply the manifests:
+```bash
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+```
+
+3. Verify the deployment:
+```bash
+kubectl get pods -l app=ultralytics
+kubectl get service ultralytics
+```
+
+The deployment includes:
+- 2 replicas by default (configurable in deployment.yaml)
+- Resource limits and requests
+- ConfigMap for non-sensitive configuration
+- Secret for sensitive data (database credentials, API keys)
+
 ### Client Setup
 
 Include the client library in your HTML:

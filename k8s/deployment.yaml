@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ultralytics
+  labels:
+    app: ultralytics
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ultralytics
+  template:
+    metadata:
+      labels:
+        app: ultralytics
+    spec:
+      containers:
+        - name: ultralytics
+          image: ultralytics:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: ultralytics-config
+            - secretRef:
+                name: ultralytics-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
