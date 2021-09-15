@@ -13,9 +13,15 @@ export interface DatabasePoolConfig {
   connectionTimeoutMillis: number;
 }
 
+export interface QueryLoggingConfig {
+  slowQueryThreshold: number;
+  logAllQueries: boolean;
+}
+
 export interface DatabaseConfig {
   url: string;
   pool: DatabasePoolConfig;
+  queryLogging: QueryLoggingConfig;
 }
 
 export interface ApiConfig {
@@ -58,6 +64,10 @@ const config: Config = {
       min: parseInt(process.env.DB_POOL_MIN || '2', 10),
       idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT || '30000', 10),
       connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT || '2000', 10),
+    },
+    queryLogging: {
+      slowQueryThreshold: parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '100', 10),
+      logAllQueries: process.env.LOG_ALL_QUERIES === 'true',
     },
   },
 

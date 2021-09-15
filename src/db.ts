@@ -52,9 +52,25 @@ export async function query(text: string, params?: unknown[]): Promise<QueryResu
   const result = await pool.query(text, params);
   const duration = Date.now() - start;
 
-  // Log slow queries in development
-  if (duration > 100) {
-    console.log('Slow query:', { text, duration, rows: result.rowCount });
+  // Log all queries if enabled
+  if (config.database.queryLogging.logAllQueries) {
+    console.log('Query executed:', {
+      text: text.substring(0, 200),
+      params: params?.length || 0,
+      duration: `${duration}ms`,
+      rows: result.rowCount,
+    });
+  }
+
+  // Log slow queries
+  if (duration > config.database.queryLogging.slowQueryThreshold) {
+    console.warn('Slow query detected:', {
+      text: text.substring(0, 500),
+      duration: `${duration}ms`,
+      threshold: `${config.database.queryLogging.slowQueryThreshold}ms`,
+      rows: result.rowCount,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   return result;
