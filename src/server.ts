@@ -11,6 +11,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { ValidationError } from './errors';
 import { validateEventData, validateBatchEventData } from './validation';
 import dashboardRoutes from './routes/dashboard';
+import exportRoutes from './routes/export';
 
 // Load OpenAPI specification
 const swaggerDocument = YAML.load(path.join(__dirname, '../docs/openapi.yaml'));
@@ -241,6 +242,9 @@ app.get('/api/events', async (req: Request, res: Response, next: NextFunction) =
 
 // Dashboard routes
 app.use('/api/dashboard', dashboardRoutes);
+
+// Export routes
+app.use('/api/export', exportRoutes);
 
 // 404 handler for unknown routes
 app.use(notFoundHandler);
