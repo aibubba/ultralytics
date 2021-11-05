@@ -1,7 +1,7 @@
 # Ultralytics
 
 [![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Tests](https://github.com/aibubba/ultralytics/workflows/Tests/badge.svg)](https://github.com/aibubba/ultralytics/actions)
 
 Self-hosted analytics for web applications.
@@ -246,4 +246,4 @@ Content-Type: application/json
 
 ## License
 
-MIT - See [LICENSE](LICENSE) for details.
+Apache 2.0 - See [LICENSE](LICENSE) for details.
