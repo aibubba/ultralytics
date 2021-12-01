@@ -204,13 +204,122 @@ export DATABASE_URL=postgres://user:password@localhost:5432/ultralytics_test
 
 ## Basic Usage
 
+### JavaScript (Browser)
+
+Include the client library in your HTML:
+
+```html
+<script src="https://your-server.com/ultralytics.min.js"></script>
+<script>
+  Ultralytics.init({
+    endpoint: 'https://your-server.com',
+    apiKey: 'your-api-key'
+  });
+
+  // Track a page view
+  Ultralytics.trackPageView();
+
+  // Track a custom event
+  Ultralytics.track('button_click', {
+    buttonId: 'signup-button',
+    page: '/home'
+  });
+</script>
+```
+
+### TypeScript / ES Modules
+
+Install the package:
+
+```bash
+npm install ultralytics
+```
+
+Import and use:
+
+```typescript
+import { Ultralytics } from 'ultralytics';
+
+// Initialize the client
+const analytics = new Ultralytics({
+  endpoint: 'https://your-server.com',
+  apiKey: 'your-api-key'
+});
+
+// Track events with full type safety
+analytics.track('purchase', {
+  productId: 'prod_123',
+  amount: 99.99,
+  currency: 'USD'
+});
+
+// Identify users
+analytics.identify('user_456', {
+  email: 'user@example.com',
+  plan: 'premium'
+});
+```
+
+### React Integration
+
+Use the `useUltralytics` hook for React applications:
+
+```tsx
+import { useUltralytics } from 'ultralytics/react';
+
+function App() {
+  const { track, identify, trackPageView } = useUltralytics({
+    endpoint: 'https://your-server.com',
+    apiKey: 'your-api-key',
+    autoTrackPageViews: true  // Automatically track page views
+  });
+
+  const handleSignup = async (userId: string) => {
+    await identify(userId, { source: 'signup_form' });
+    await track('signup_completed', { method: 'email' });
+  };
+
+  return (
+    <button onClick={() => track('button_clicked', { buttonId: 'cta' })}>
+      Click Me
+    </button>
+  );
+}
+```
+
+### Configuration Options
+
+```typescript
+interface UltralyticsConfig {
+  // Required: Server endpoint URL
+  endpoint: string;
+  
+  // Optional: API key for authentication
+  apiKey?: string;
+  
+  // Optional: Enable automatic page view tracking (React only)
+  autoTrackPageViews?: boolean;
+  
+  // Optional: Enable debug logging
+  debug?: boolean;
+}
+```
+
 ### Tracking Events
 
+Track custom events with any properties:
+
 ```javascript
-// Track a custom event
+// JavaScript
 Ultralytics.track('button_click', {
   buttonId: 'signup-button',
   page: '/home'
+});
+
+// TypeScript - with type checking
+analytics.track('form_submitted', {
+  formId: 'contact',
+  fields: ['name', 'email', 'message']
 });
 ```
 
