@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2021-12-10
+
+### Added
+- Full TypeScript support for both server and client
+- React hooks (`useUltralytics`) for React applications
+- ES module build output for modern bundlers
+- Kubernetes deployment manifests
+- Nginx reverse proxy configuration for production
+- API documentation with OpenAPI/Swagger UI at `/docs`
+- Dashboard query endpoints (`/api/dashboard/summary`, `/api/dashboard/events-over-time`)
+- Data export endpoint (`/api/export`) with CSV and JSON formats
+- Database query performance logging with configurable thresholds
+
+### Changed
+- **BREAKING**: License changed from MIT to Apache 2.0
+- Server and client code migrated to TypeScript
+- Improved build tooling with Rollup ESM output
+- Production Docker Compose configuration added
+
+### Documentation
+- Updated README with TypeScript and React examples
+- Added API reference documentation
+
 ## [0.3.0] - 2020-12-15
 
 ### Added
