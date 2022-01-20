@@ -1,0 +1,49 @@
+# Ultralytics Examples
+
+This directory contains example applications demonstrating how to integrate Ultralytics analytics into your projects.
+
+## Available Examples
+
+### React App
+
+A basic React application showing Ultralytics integration.
+
+**Location:** `react-app/`
+
+**Features demonstrated:**
+- Basic project setup with Ultralytics
+- Page view tracking
+- Custom event tracking
+- User identification
+
+**Running the example:**
+
+```bash
+cd react-app
+npm install
+npm start
+```
+
+The app will be available at http://localhost:3000
+
+## Prerequisites
+
+Before running any example, make sure you have:
+
+1. An Ultralytics server running (see main README for setup)
+2. A valid API key
+3. Node.js 14+ installed
+
+## Configuration
+
+Each example includes a configuration section where you'll need to set:
+
+- `ULTRALYTICS_API_KEY`: Your API key from the server
+- `ULTRALYTICS_ENDPOINT`: The URL of your Ultralytics server (defaults to http://localhost:3000)
+
+## More Examples Coming Soon
+
+We plan to add examples for:
+- Vue.js
+- Next.js
+- Plain JavaScript
