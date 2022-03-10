@@ -22,6 +22,8 @@ tags:
     description: Health check endpoints
   - name: Events
     description: Event tracking and retrieval
+  - name: Analytics
+    description: Analytics and reporting endpoints
 
 paths:
   /health:
@@ -153,6 +155,42 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/analytics/funnel:
+    post:
+      tags:
+        - Analytics
+      summary: Analyze funnel conversion
+      description: |
+        Analyze conversion through a series of events (funnel analysis).
+        Returns conversion rates and drop-off at each step.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunnelQuery'
+            example:
+              steps:
+                - eventName: page_view
+                - eventName: add_to_cart
+                - eventName: checkout
+                - eventName: purchase
+              startDate: "2022-01-01T00:00:00Z"
+              endDate: "2022-01-31T23:59:59Z"
+      responses:
+        '200':
+          description: Funnel analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FunnelResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -222,6 +260,83 @@ components:
           type: string
         code:
           type: string
+
+    FunnelStep:
+      type: object
+      properties:
+        eventName:
+          type: string
+          description: Name of the event for this funnel step
+        filters:
+          type: object
+          description: Optional filters to apply to this step
+      required:
+        - eventName
+
+    FunnelQuery:
+      type: object
+      properties:
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunnelStep'
+          minItems: 2
+          description: Array of funnel steps (minimum 2)
+        startDate:
+          type: string
+          format: date-time
+          description: Start date for analysis
+        endDate:
+          type: string
+          format: date-time
+          description: End date for analysis
+        groupBy:
+          type: string
+          description: Optional property to group results by
+      required:
+        - steps
+        - startDate
+        - endDate
+
+    FunnelStepResult:
+      type: object
+      properties:
+        step:
+          type: integer
+          description: Step number (1-indexed)
+        eventName:
+          type: string
+        count:
+          type: integer
+          description: Number of unique sessions that reached this step
+        conversionRate:
+          type: number
+          description: Percentage that converted from previous step
+        dropoffRate:
+          type: number
+          description: Percentage that dropped off from previous step
+
+    FunnelResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            steps:
+              type: array
+              items:
+                $ref: '#/components/schemas/FunnelStepResult'
+            totalStarted:
+              type: integer
+              description: Total sessions that started the funnel
+            totalCompleted:
+              type: integer
+              description: Total sessions that completed all steps
+            overallConversionRate:
+              type: number
+              description: Overall conversion rate (completed / started)
 
   responses:
     BadRequest:

@@ -12,6 +12,7 @@ import { ValidationError } from './errors';
 import { validateEventData, validateBatchEventData } from './validation';
 import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
+import analyticsRoutes from './routes/analytics';
 
 // Load OpenAPI specification
 const swaggerDocument = YAML.load(path.join(__dirname, '../docs/openapi.yaml'));
@@ -245,6 +246,9 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Export routes
 app.use('/api/export', exportRoutes);
+
+// Analytics routes
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 handler for unknown routes
 app.use(notFoundHandler);
