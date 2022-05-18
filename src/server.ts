@@ -9,7 +9,7 @@ import config from './config';
 import { validateApiKey, AuthenticatedRequest } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { ValidationError } from './errors';
-import { validateEventData, validateBatchEventData } from './validation';
+import { validateEventData, validateBatchEventData, sanitizeEventProperties } from './validation';
 import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
 import analyticsRoutes from './routes/analytics';
@@ -95,11 +95,10 @@ app.post('/api/events', async (req: Request, res: Response, next: NextFunction) 
     }
 
 
-    // Store the event
-    // Note: properties are stored as-is without sanitization
+    // Store the event with sanitized properties
     const event = {
       name: name,
-      properties: properties || {},
+      properties: sanitizeEventProperties(properties || {}) as Record<string, unknown>,
       sessionId: sessionId || null,
       userId: userId || null,
       timestamp: new Date()
@@ -142,7 +141,7 @@ app.post('/api/events/batch', async (req: Request, res: Response, next: NextFunc
     for (const eventData of events) {
       const event = {
         name: eventData.name,
-        properties: eventData.properties || {},
+        properties: sanitizeEventProperties(eventData.properties || {}) as Record<string, unknown>,
         sessionId: eventData.sessionId || null,
         userId: eventData.userId || null,
         timestamp: eventData.timestamp ? new Date(eventData.timestamp) : new Date()

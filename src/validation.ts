@@ -3,6 +3,7 @@
  */
 
 import Ajv, { ErrorObject, ValidateFunction } from 'ajv';
+import sanitizeHtml from 'sanitize-html';
 
 const ajv = new Ajv({ allErrors: true });
 
@@ -96,6 +97,39 @@ function formatErrors(errors: ErrorObject[] | null | undefined): string {
 }
 
 /**
+ * Sanitize HTML from string values to prevent XSS attacks
+ */
+function sanitizeString(value: string): string {
+  return sanitizeHtml(value, {
+    allowedTags: [],
+    allowedAttributes: {}
+  });
+}
+
+/**
+ * Recursively sanitize all string values in an object
+ */
+export function sanitizeEventProperties(obj: unknown): unknown {
+  if (typeof obj === 'string') {
+    return sanitizeString(obj);
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeEventProperties(item));
+  }
+  
+  if (obj !== null && typeof obj === 'object') {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      sanitized[key] = sanitizeEventProperties(value);
+    }
+    return sanitized;
+  }
+  
+  return obj;
+}
+
+/**
  * Validate a single event
  */
 export function validateEventData(event: unknown): ValidationResult {
@@ -116,7 +150,3 @@ export function validateBatchEventData(data: unknown): ValidationResult {
     errors: valid ? null : formatErrors(validateBatchEvents.errors)
   };
 }
-
-// Note: This validation does NOT sanitize HTML content in string properties.
-// Raw string values are passed through as-is, which could be a security concern
-// if these values are rendered in a web interface without proper escaping.
