@@ -191,6 +191,41 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/analytics/cohort:
+    post:
+      tags:
+        - Analytics
+      summary: Analyze cohort retention
+      description: |
+        Analyze user retention by cohort. Groups users by when they first performed
+        a specific action (cohort event) and tracks their return behavior over time.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CohortQuery'
+            example:
+              cohortEvent: signup
+              returnEvent: login
+              startDate: "2022-01-01T00:00:00Z"
+              endDate: "2022-03-31T23:59:59Z"
+              granularity: week
+              periods: 12
+      responses:
+        '200':
+          description: Cohort analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CohortResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -337,6 +372,92 @@ components:
             overallConversionRate:
               type: number
               description: Overall conversion rate (completed / started)
+
+    CohortQuery:
+      type: object
+      properties:
+        cohortEvent:
+          type: string
+          description: Event that defines cohort membership (e.g., 'signup')
+        returnEvent:
+          type: string
+          description: Event to measure retention (e.g., 'login')
+        startDate:
+          type: string
+          format: date-time
+          description: Start of cohort analysis period
+        endDate:
+          type: string
+          format: date-time
+          description: End of cohort analysis period
+        granularity:
+          type: string
+          enum: [day, week, month]
+          description: Cohort grouping granularity
+          default: week
+        periods:
+          type: integer
+          description: Number of periods to track
+          default: 12
+          minimum: 1
+          maximum: 52
+      required:
+        - cohortEvent
+        - returnEvent
+        - startDate
+        - endDate
+
+    CohortPeriod:
+      type: object
+      properties:
+        period:
+          type: integer
+          description: Period number (0-indexed)
+        count:
+          type: integer
+          description: Number of users who returned in this period
+        retentionRate:
+          type: number
+          description: Percentage of cohort that returned
+
+    CohortRow:
+      type: object
+      properties:
+        cohortDate:
+          type: string
+          format: date
+          description: Date this cohort was formed
+        cohortSize:
+          type: integer
+          description: Number of users in this cohort
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/CohortPeriod'
+
+    CohortResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            cohorts:
+              type: array
+              items:
+                $ref: '#/components/schemas/CohortRow'
+            totalUsers:
+              type: integer
+              description: Total users across all cohorts
+            averageRetention:
+              type: array
+              items:
+                type: number
+              description: Average retention rate for each period
+            granularity:
+              type: string
+              description: The granularity used for the analysis
 
   responses:
     BadRequest:
