@@ -18,6 +18,7 @@ import type {
 interface BoundHandlers {
   visibilityChange?: () => void;
   beforeUnload?: () => void;
+  popState?: () => void;
 }
 
 class UltralyticsClient {
@@ -28,6 +29,8 @@ class UltralyticsClient {
   private _sessionTimeout: number = 30 * 60 * 1000; // 30 minutes
   private _lastActivity: number | null = null;
   private _boundHandlers: BoundHandlers = {};
+  private _autoTrack: boolean = false;
+  private _lastTrackedPath: string | null = null;
 
   /**
    * Initialize the Ultralytics client
@@ -45,6 +48,7 @@ class UltralyticsClient {
 
     this._endpoint = options.endpoint.replace(/\/$/, '');
     this._lastActivity = Date.now();
+    this._autoTrack = options.autoTrack || false;
 
     // Initialize session synchronously to avoid race conditions
     this._initSession();
@@ -70,6 +74,11 @@ class UltralyticsClient {
 
     // Track before unload
     window.addEventListener('beforeunload', this._boundHandlers.beforeUnload);
+
+    // Set up automatic page view tracking if enabled
+    if (this._autoTrack) {
+      this._setupAutoTracking(options.trackInitialPageView !== false);
+    }
 
     console.log('Ultralytics initialized');
   }
@@ -99,6 +108,50 @@ class UltralyticsClient {
     }
     this._lastActivity = Date.now();
     this._storeSession();
+  }
+
+  /**
+   * Set up automatic page view tracking
+   */
+  private _setupAutoTracking(trackInitial: boolean): void {
+    // Track initial page view if requested
+    if (trackInitial) {
+      this._lastTrackedPath = window.location.pathname;
+      this.trackPageView();
+    }
+
+    // Listen for browser back/forward navigation
+    this._boundHandlers.popState = (): void => {
+      this._onHistoryChange();
+    };
+    window.addEventListener('popstate', this._boundHandlers.popState);
+
+    // Intercept pushState and replaceState for SPA navigation
+    const originalPushState = history.pushState.bind(history);
+    const originalReplaceState = history.replaceState.bind(history);
+
+    history.pushState = (...args): void => {
+      originalPushState(...args);
+      this._onHistoryChange();
+    };
+
+    history.replaceState = (...args): void => {
+      originalReplaceState(...args);
+      this._onHistoryChange();
+    };
+  }
+
+  /**
+   * Handle history changes for SPA navigation tracking
+   */
+  private _onHistoryChange(): void {
+    const currentPath = window.location.pathname;
+    
+    // Only track if the path actually changed
+    if (currentPath !== this._lastTrackedPath) {
+      this._lastTrackedPath = currentPath;
+      this.trackPageView();
+    }
   }
 
   /**
@@ -214,6 +267,9 @@ class UltralyticsClient {
     if (this._boundHandlers.beforeUnload) {
       window.removeEventListener('beforeunload', this._boundHandlers.beforeUnload);
     }
+    if (this._boundHandlers.popState) {
+      window.removeEventListener('popstate', this._boundHandlers.popState);
+    }
     this._boundHandlers = {};
   }
 
@@ -234,6 +290,8 @@ class UltralyticsClient {
     this._endpoint = null;
     this._sessionId = null;
     this._userId = null;
+    this._autoTrack = false;
+    this._lastTrackedPath = null;
 
     console.log('Ultralytics destroyed');
   }

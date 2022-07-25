@@ -227,6 +227,36 @@ Include the client library in your HTML:
 </script>
 ```
 
+#### Automatic Page View Tracking
+
+For single-page applications (SPAs), you can enable automatic page view tracking:
+
+```html
+<script src="https://your-server.com/ultralytics.min.js"></script>
+<script>
+  Ultralytics.init({
+    endpoint: 'https://your-server.com',
+    apiKey: 'your-api-key',
+    autoTrack: true  // Automatically tracks page views on navigation
+  });
+</script>
+```
+
+This will automatically track:
+- Initial page load
+- Browser back/forward navigation
+- SPA navigation (via history.pushState and history.replaceState)
+
+To disable tracking the initial page load:
+
+```javascript
+Ultralytics.init({
+  endpoint: 'https://your-server.com',
+  autoTrack: true,
+  trackInitialPageView: false  // Don't track initial page load
+});
+```
+
 ### TypeScript / ES Modules
 
 Install the package:

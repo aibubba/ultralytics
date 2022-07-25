@@ -8,6 +8,10 @@
 export interface UltralyticsOptions {
   /** The server endpoint URL */
   endpoint: string;
+  /** Enable automatic page view tracking (default: false) */
+  autoTrack?: boolean;
+  /** Track on initial page load when autoTrack is enabled (default: true) */
+  trackInitialPageView?: boolean;
 }
 
 /**
