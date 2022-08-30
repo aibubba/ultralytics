@@ -10,6 +10,7 @@ import { validateApiKey, AuthenticatedRequest } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { ValidationError } from './errors';
 import { validateEventData, validateBatchEventData, sanitizeEventProperties } from './validation';
+import { getMetrics, getContentType, httpRequestsTotal, httpRequestDuration, eventsTrackedTotal, batchEventsTotal } from './metrics';
 import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
 import analyticsRoutes from './routes/analytics';
@@ -80,6 +81,17 @@ app.get('/health', async (_req: Request, res: Response) => {
   res.status(statusCode).json(health);
 });
 
+// Prometheus metrics endpoint
+app.get('/metrics', async (_req: Request, res: Response) => {
+  try {
+    res.set('Content-Type', getContentType());
+    res.send(await getMetrics());
+  } catch (error) {
+    console.error('Error collecting metrics:', (error as Error).message);
+    res.status(500).send('Error collecting metrics');
+  }
+});
+
 // Apply API key authentication to all /api routes
 app.use('/api', validateApiKey);
 
@@ -105,6 +117,9 @@ app.post('/api/events', async (req: Request, res: Response, next: NextFunction) 
     };
 
     const result = await db.storeEvent(event);
+
+    // Track metrics
+    eventsTrackedTotal.inc({ event_type: name });
 
     // Update session tracking
     if (sessionId) {
@@ -159,6 +174,9 @@ app.post('/api/events/batch', async (req: Request, res: Response, next: NextFunc
     for (const sessionId of sessionsToUpdate) {
       await db.updateSession(sessionId);
     }
+
+    // Track metrics
+    batchEventsTotal.inc(results.length);
 
     res.status(201).json({
       success: true,
