@@ -14,6 +14,7 @@ import { getMetrics, getContentType, httpRequestsTotal, httpRequestDuration, eve
 import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
 import analyticsRoutes from './routes/analytics';
+import privacyRoutes from './routes/privacy';
 
 // Load OpenAPI specification
 const swaggerDocument = YAML.load(path.join(__dirname, '../docs/openapi.yaml'));
@@ -266,6 +267,9 @@ app.use('/api/export', exportRoutes);
 
 // Analytics routes
 app.use('/api/analytics', analyticsRoutes);
+
+// Privacy routes
+app.use('/api/privacy', privacyRoutes);
 
 // 404 handler for unknown routes
 app.use(notFoundHandler);
