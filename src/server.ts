@@ -15,6 +15,7 @@ import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
 import analyticsRoutes from './routes/analytics';
 import privacyRoutes from './routes/privacy';
+import replayRoutes from './routes/replay';
 
 // Load OpenAPI specification
 const swaggerDocument = YAML.load(path.join(__dirname, '../docs/openapi.yaml'));
@@ -270,6 +271,9 @@ app.use('/api/analytics', analyticsRoutes);
 
 // Privacy routes
 app.use('/api/privacy', privacyRoutes);
+
+// Replay routes
+app.use('/api/replay', replayRoutes);
 
 // 404 handler for unknown routes
 app.use(notFoundHandler);
