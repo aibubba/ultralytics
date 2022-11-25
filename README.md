@@ -378,7 +378,7 @@ Content-Type: application/json
 ## Features
 
 - **Privacy-focused**: All data stays on your servers
-- **Lightweight client**: Simple JavaScript library for browsers
+- **Lightweight client**: ~3kb gzipped JavaScript library for browsers
 - **Session tracking**: Automatic session management with 30-minute timeout
 - **Event querying**: Filter events by date range, event name, or session
 - **Easy setup**: Docker and docker-compose included

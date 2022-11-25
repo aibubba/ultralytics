@@ -21,66 +21,67 @@ interface BoundHandlers {
   popState?: () => void;
 }
 
+// Storage keys as constants to reduce duplicate strings
+const STORAGE_SESSION = 'ultralytics_session';
+const STORAGE_USER = 'ultralytics_user_id';
+
 class UltralyticsClient {
-  private _initialized: boolean = false;
+  private _initialized = false;
   private _endpoint: string | null = null;
   private _sessionId: string | null = null;
   private _userId: string | null = null;
-  private _sessionTimeout: number = 30 * 60 * 1000; // 30 minutes
+  private _sessionTimeout = 30 * 60 * 1000; // 30 minutes
   private _lastActivity: number | null = null;
   private _boundHandlers: BoundHandlers = {};
-  private _autoTrack: boolean = false;
+  private _autoTrack = false;
   private _lastTrackedPath: string | null = null;
+  private _debug = false;
+
+  /**
+   * Log only if debug mode is enabled
+   */
+  private _log(...args: unknown[]): void {
+    if (this._debug) console.log('Ultralytics:', ...args);
+  }
 
   /**
    * Initialize the Ultralytics client
    */
   init(options: UltralyticsOptions): void {
-    if (!options || !options.endpoint) {
+    if (!options?.endpoint) {
       console.error('Ultralytics: endpoint is required');
       return;
     }
 
-    // Clean up any existing listeners to prevent memory leaks
-    if (this._initialized) {
-      this._removeEventListeners();
-    }
+    // Clean up any existing listeners
+    if (this._initialized) this._removeEventListeners();
 
     this._endpoint = options.endpoint.replace(/\/$/, '');
     this._lastActivity = Date.now();
     this._autoTrack = options.autoTrack || false;
+    this._debug = options.debug || false;
 
-    // Initialize session synchronously to avoid race conditions
+    // Initialize session synchronously
     this._initSession();
-
-    // Only mark as initialized after session is ready
     this._initialized = true;
-
-    // Restore user ID from localStorage if available
     this._restoreUserId();
 
-    // Store bound event handlers for cleanup
+    // Bind event handlers
     this._boundHandlers.visibilityChange = (): void => {
-      if (document.visibilityState === 'visible') {
-        this._checkSession();
-      }
+      if (document.visibilityState === 'visible') this._checkSession();
     };
     this._boundHandlers.beforeUnload = (): void => {
       this._lastActivity = Date.now();
     };
 
-    // Track page visibility changes
     document.addEventListener('visibilitychange', this._boundHandlers.visibilityChange);
-
-    // Track before unload
     window.addEventListener('beforeunload', this._boundHandlers.beforeUnload);
 
-    // Set up automatic page view tracking if enabled
     if (this._autoTrack) {
       this._setupAutoTracking(options.trackInitialPageView !== false);
     }
 
-    console.log('Ultralytics initialized');
+    this._log('initialized');
   }
 
   /**
@@ -88,14 +89,12 @@ class UltralyticsClient {
    */
   private _initSession(): void {
     const stored = this._getStoredSession();
-
     if (stored && (Date.now() - stored.lastActivity) < this._sessionTimeout) {
       this._sessionId = stored.id;
       this._lastActivity = stored.lastActivity;
     } else {
       this._sessionId = this._generateId();
     }
-
     this._storeSession();
   }
 
@@ -114,96 +113,90 @@ class UltralyticsClient {
    * Set up automatic page view tracking
    */
   private _setupAutoTracking(trackInitial: boolean): void {
-    // Track initial page view if requested
     if (trackInitial) {
       this._lastTrackedPath = window.location.pathname;
       this.trackPageView();
     }
 
-    // Listen for browser back/forward navigation
-    this._boundHandlers.popState = (): void => {
-      this._onHistoryChange();
-    };
+    this._boundHandlers.popState = (): void => this._onHistoryChange();
     window.addEventListener('popstate', this._boundHandlers.popState);
 
-    // Intercept pushState and replaceState for SPA navigation
-    const originalPushState = history.pushState.bind(history);
-    const originalReplaceState = history.replaceState.bind(history);
-
-    history.pushState = (...args): void => {
-      originalPushState(...args);
-      this._onHistoryChange();
+    // Intercept history methods for SPA navigation
+    const self = this;
+    const wrap = (fn: typeof history.pushState): typeof history.pushState => {
+      return function(this: History, ...args): void {
+        fn.apply(this, args);
+        self._onHistoryChange();
+      };
     };
 
-    history.replaceState = (...args): void => {
-      originalReplaceState(...args);
-      this._onHistoryChange();
-    };
+    history.pushState = wrap(history.pushState.bind(history));
+    history.replaceState = wrap(history.replaceState.bind(history));
   }
 
   /**
-   * Handle history changes for SPA navigation tracking
+   * Handle history changes for SPA navigation
    */
   private _onHistoryChange(): void {
-    const currentPath = window.location.pathname;
-    
-    // Only track if the path actually changed
-    if (currentPath !== this._lastTrackedPath) {
-      this._lastTrackedPath = currentPath;
+    const path = window.location.pathname;
+    if (path !== this._lastTrackedPath) {
+      this._lastTrackedPath = path;
       this.trackPageView();
     }
   }
 
   /**
-   * Generate a unique ID
+   * Generate a UUID v4
    */
   private _generateId(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
       const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
   }
 
+  /**
+   * Safe localStorage access
+   */
+  private _storage = {
+    get: (key: string): string | null => {
+      try { return localStorage.getItem(key); } 
+      catch { return null; }
+    },
+    set: (key: string, value: string): void => {
+      try { localStorage.setItem(key, value); } 
+      catch { /* ignore */ }
+    },
+    remove: (key: string): void => {
+      try { localStorage.removeItem(key); } 
+      catch { /* ignore */ }
+    }
+  };
 
   /**
    * Store session in localStorage
    */
   private _storeSession(): void {
-    try {
-      localStorage.setItem('ultralytics_session', JSON.stringify({
-        id: this._sessionId,
-        lastActivity: this._lastActivity
-      }));
-    } catch (e) {
-      // localStorage not available
-    }
+    this._storage.set(STORAGE_SESSION, JSON.stringify({
+      id: this._sessionId,
+      lastActivity: this._lastActivity
+    }));
   }
 
   /**
    * Get stored session from localStorage
    */
   private _getStoredSession(): StoredSession | null {
-    try {
-      const stored = localStorage.getItem('ultralytics_session');
-      return stored ? JSON.parse(stored) as StoredSession : null;
-    } catch (e) {
-      return null;
-    }
+    const stored = this._storage.get(STORAGE_SESSION);
+    return stored ? JSON.parse(stored) as StoredSession : null;
   }
 
   /**
    * Restore user ID from localStorage
    */
   private _restoreUserId(): void {
-    try {
-      const userId = localStorage.getItem('ultralytics_user_id');
-      if (userId) {
-        this._userId = userId;
-      }
-    } catch (e) {
-      // localStorage not available
-    }
+    const userId = this._storage.get(STORAGE_USER);
+    if (userId) this._userId = userId;
   }
 
   /**
@@ -211,107 +204,71 @@ class UltralyticsClient {
    */
   track(name: string, properties?: EventProperties): void {
     if (!this._initialized) {
-      console.error('Ultralytics: not initialized. Call init() first.');
+      console.error('Ultralytics: not initialized');
       return;
     }
 
-    // Ensure we have a session ID (defensive check)
     if (!this._sessionId) {
       this._sessionId = this._generateId();
       this._storeSession();
     }
 
-
     this._lastActivity = Date.now();
     this._storeSession();
 
-    const data: EventData = {
-      name: name,
+    this._send('/api/events', {
+      name,
       properties: properties || {},
       sessionId: this._sessionId,
       userId: this._userId,
       timestamp: new Date().toISOString()
-    };
-
-    this._send('/api/events', data);
+    });
   }
 
   /**
    * Track a page view
    */
   trackPageView(properties?: PageViewProperties): void {
-    const pageProps: PageViewProperties = {
+    this.track('page_view', {
       url: window.location.href,
       path: window.location.pathname,
       title: document.title,
-      referrer: document.referrer || null
-    };
-
-    // Merge custom properties
-    if (properties) {
-      Object.keys(properties).forEach((key) => {
-        pageProps[key] = properties[key];
-      });
-    }
-
-    this.track('page_view', pageProps);
+      referrer: document.referrer || null,
+      ...properties
+    });
   }
 
   /**
-   * Remove event listeners (internal helper)
+   * Remove event listeners
    */
   private _removeEventListeners(): void {
-    if (this._boundHandlers.visibilityChange) {
-      document.removeEventListener('visibilitychange', this._boundHandlers.visibilityChange);
-    }
-    if (this._boundHandlers.beforeUnload) {
-      window.removeEventListener('beforeunload', this._boundHandlers.beforeUnload);
-    }
-    if (this._boundHandlers.popState) {
-      window.removeEventListener('popstate', this._boundHandlers.popState);
-    }
+    const h = this._boundHandlers;
+    if (h.visibilityChange) document.removeEventListener('visibilitychange', h.visibilityChange);
+    if (h.beforeUnload) window.removeEventListener('beforeunload', h.beforeUnload);
+    if (h.popState) window.removeEventListener('popstate', h.popState);
     this._boundHandlers = {};
   }
 
   /**
-   * Clean up event listeners and reset state
+   * Clean up and reset state
    */
   destroy(): void {
-    if (!this._initialized) {
-      return;
-    }
-
-
-    // Remove event listeners
+    if (!this._initialized) return;
     this._removeEventListeners();
-
-    // Reset state
     this._initialized = false;
     this._endpoint = null;
     this._sessionId = null;
     this._userId = null;
     this._autoTrack = false;
     this._lastTrackedPath = null;
-
-    console.log('Ultralytics destroyed');
+    this._log('destroyed');
   }
 
   /**
-   * Track a custom event (alias for track with event type)
+   * Track a custom event (alias with eventType)
    */
   trackEvent(eventName: string, properties?: EventProperties): void {
-    const eventProps: EventProperties = {
-      eventType: 'custom'
-    };
-
-    // Merge custom properties
-    if (properties) {
-      Object.keys(properties).forEach((key) => {
-        eventProps[key] = properties[key];
-      });
-    }
-
-    this.track(eventName, eventProps);
+    this.track(eventName, { eventType: 'custom', ...properties });
   }
 
   /**
@@ -319,32 +276,20 @@ class UltralyticsClient {
    */
   identify(userId: string, traits?: UserTraits): void {
     if (!this._initialized) {
-      console.error('Ultralytics: not initialized. Call init() first.');
+      console.error('Ultralytics: not initialized');
       return;
     }
-
     if (!userId) {
-      console.error('Ultralytics: userId is required for identify()');
+      console.error('Ultralytics: userId is required');
       return;
     }
 
     this._userId = userId;
+    this._storage.set(STORAGE_USER, userId);
 
-    // Store user ID in localStorage for persistence
-    try {
-      localStorage.setItem('ultralytics_user_id', userId);
-    } catch (e) {
-      // localStorage not available
-    }
-
-    // Optionally track an identify event with user traits
-    if (traits) {
-      this.track('identify', traits);
-    }
-
-    console.log('Ultralytics: user identified', userId);
+    if (traits) this.track('identify', traits);
+    this._log('user identified', userId);
   }
-
 
   /**
    * Get the current user ID
@@ -354,53 +299,47 @@ class UltralyticsClient {
   }
 
   /**
-   * Clear the current user (for logout scenarios)
+   * Clear the current user
    */
   clearUser(): void {
     this._userId = null;
-    try {
-      localStorage.removeItem('ultralytics_user_id');
-    } catch (e) {
-      // localStorage not available
-    }
+    this._storage.remove(STORAGE_USER);
   }
 
   /**
-   * Track multiple events in a single request
+   * Track multiple events in a batch
    */
   trackBatch(events: BatchEvent[], callback?: BatchCallback): void {
     if (!this._initialized) {
-      const error = new Error('Ultralytics: not initialized. Call init() first.');
-      console.error(error.message);
-      if (callback) callback(error);
+      const err = new Error('Ultralytics: not initialized');
+      console.error(err.message);
+      callback?.(err);
       return;
     }
 
-    if (!Array.isArray(events) || events.length === 0) {
-      const error = new Error('Ultralytics: events must be a non-empty array');
-      console.error(error.message);
-      if (callback) callback(error);
+    if (!Array.isArray(events) || !events.length) {
+      const err = new Error('Ultralytics: events must be a non-empty array');
+      console.error(err.message);
+      callback?.(err);
       return;
     }
 
     this._lastActivity = Date.now();
     this._storeSession();
 
-    // Prepare events with session and user info
-    const preparedEvents: EventData[] = events.map((event) => ({
-      name: event.name,
-      properties: event.properties || {},
+    const prepared: EventData[] = events.map(e => ({
+      name: e.name,
+      properties: e.properties || {},
       sessionId: this._sessionId!,
       userId: this._userId,
-      timestamp: event.timestamp || new Date().toISOString()
+      timestamp: e.timestamp || new Date().toISOString()
     }));
 
-    this._sendBatch(preparedEvents, callback);
+    this._sendBatch(prepared, callback);
   }
 
-
   /**
-   * Send batch data to the server
+   * Send batch to server
    */
   private _sendBatch(events: EventData[], callback?: BatchCallback): void {
     const xhr = new XMLHttpRequest();
@@ -408,29 +347,24 @@ class UltralyticsClient {
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onreadystatechange = (): void => {
-      if (xhr.readyState === 4) {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          if (callback) {
-            try {
-              const result = JSON.parse(xhr.responseText) as BatchResult;
-              callback(null, result);
-            } catch (e) {
-              callback(null, { success: true });
-            }
-          }
-        } else {
-          const error = new Error('Failed to send batch: ' + xhr.status);
-          console.error('Ultralytics: failed to send batch', xhr.status);
-          if (callback) callback(error);
+      if (xhr.readyState !== 4) return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          callback?.(null, JSON.parse(xhr.responseText) as BatchResult);
+        } catch {
+          callback?.(null, { success: true });
         }
+      } else {
+        console.error('Ultralytics: batch send failed', xhr.status);
+        callback?.(new Error('Batch failed: ' + xhr.status));
       }
     };
 
-    xhr.send(JSON.stringify({ events: events }));
+    xhr.send(JSON.stringify({ events }));
   }
 
   /**
-   * Send data to the server
+   * Send single event to server
    */
   private _send(path: string, data: EventData): void {
     const xhr = new XMLHttpRequest();
@@ -438,12 +372,8 @@ class UltralyticsClient {
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onreadystatechange = (): void => {
-      if (xhr.readyState === 4) {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          // Success
-        } else {
-          console.error('Ultralytics: failed to send event', xhr.status);
-        }
+      if (xhr.readyState === 4 && xhr.status >= 400) {
+        console.error('Ultralytics: send failed', xhr.status);
       }
     };
 
@@ -457,9 +387,9 @@ const Ultralytics = new UltralyticsClient();
 // Export for module usage
 export { Ultralytics, UltralyticsClient };
 
-// Also expose to window for script tag usage
+// Expose to window for script tag usage
 if (typeof window !== 'undefined') {
-  (window as any).Ultralytics = Ultralytics;
+  (window as unknown as Record<string, unknown>).Ultralytics = Ultralytics;
 }
 
 export default Ultralytics;

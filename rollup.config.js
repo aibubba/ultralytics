@@ -1,6 +1,22 @@
 import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
 
+const terserOptions = {
+  compress: {
+    drop_console: false,
+    drop_debugger: true,
+    pure_funcs: [],
+    passes: 2,
+    ecma: 2018
+  },
+  mangle: {
+    properties: false
+  },
+  format: {
+    comments: false
+  }
+};
+
 export default {
   input: 'src/client.ts',
   output: [
@@ -19,7 +35,7 @@ export default {
       sourcemap: true,
       exports: 'named',
       globals: {},
-      plugins: [terser()]
+      plugins: [terser(terserOptions)]
     },
     {
       file: 'dist/ultralytics.esm.js',
@@ -32,7 +48,7 @@ export default {
       format: 'es',
       sourcemap: true,
       exports: 'named',
-      plugins: [terser()]
+      plugins: [terser(terserOptions)]
     }
   ],
   plugins: [
@@ -41,5 +57,9 @@ export default {
       declaration: false,
       declarationDir: undefined
     })
-  ]
+  ],
+  treeshake: {
+    moduleSideEffects: false,
+    propertyReadSideEffects: false
+  }
 };

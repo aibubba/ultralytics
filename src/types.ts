@@ -12,6 +12,8 @@ export interface UltralyticsOptions {
   autoTrack?: boolean;
   /** Track on initial page load when autoTrack is enabled (default: true) */
   trackInitialPageView?: boolean;
+  /** Enable debug mode for verbose logging (default: false) */
+  debug?: boolean;
 }
 
 /**
