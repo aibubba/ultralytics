@@ -7,8 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-12-12
+
+### Added
+- Example React application demonstrating SDK integration
+- Funnel analysis endpoint (`POST /api/analytics/funnel`)
+- Cohort analysis endpoint (`POST /api/analytics/cohort`)
+- SSL/TLS support in Docker production setup
+- Automatic page view tracking for SPAs (`autoTrack` option)
+- Prometheus metrics endpoint (`GET /metrics`)
+- User privacy controls and data deletion (`DELETE /api/users/:id/data`)
+- Event replay functionality for debugging
+- Debug mode for client SDK
+
+### Changed
+- Improved client bundle size with better tree-shaking (~3kb gzipped)
+- Enhanced rollup configuration for smaller builds
+
 ### Security
-- Fixed XSS vulnerability in event property storage. All string values in event properties are now sanitized to prevent script injection attacks. Users are strongly advised to upgrade.
+- **CRITICAL**: Fixed XSS vulnerability in event property storage. All string values in event properties are now sanitized to prevent script injection attacks. Users are strongly advised to upgrade.
+
+### Documentation
+- Updated CONTRIBUTING.md with TypeScript guidelines and new architecture
+- Added comprehensive architecture documentation (`docs/architecture.md`)
 
 ## [0.4.0] - 2021-12-10
 
