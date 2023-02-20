@@ -1,6 +1,23 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 import config from './config';
 
+/**
+ * Sleep utility for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate exponential backoff delay with jitter
+ */
+function calculateBackoffDelay(attempt: number): number {
+  const { baseDelayMs, maxDelayMs } = config.database.retry;
+  const exponentialDelay = baseDelayMs * Math.pow(2, attempt);
+  const jitter = Math.random() * 0.3 * exponentialDelay; // Add up to 30% jitter
+  return Math.min(exponentialDelay + jitter, maxDelayMs);
+}
+
 // Create connection pool
 const pool = new Pool({
   connectionString: config.database.url,
@@ -18,6 +35,42 @@ pool.on('connect', () => {
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
+
+/**
+ * Initialize database connection with retry logic
+ * Uses exponential backoff for connection failures
+ */
+export async function initializeConnection(): Promise<void> {
+  const { maxRetries } = config.database.retry;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      // Test the connection
+      const client = await pool.connect();
+      await client.query('SELECT 1');
+      client.release();
+      console.log('Database connection established successfully');
+      return;
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt < maxRetries) {
+        const delay = calculateBackoffDelay(attempt);
+        console.warn(`Database connection attempt ${attempt + 1}/${maxRetries + 1} failed. Retrying in ${Math.round(delay)}ms...`, {
+          error: lastError.message,
+        });
+        await sleep(delay);
+      }
+    }
+  }
+
+  console.error('Failed to connect to database after all retries', {
+    maxRetries,
+    lastError: lastError?.message,
+  });
+  throw lastError;
+}
 
 export interface EventInput {
   name: string;

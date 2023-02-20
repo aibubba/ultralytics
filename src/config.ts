@@ -18,10 +18,17 @@ export interface QueryLoggingConfig {
   logAllQueries: boolean;
 }
 
+export interface RetryConfig {
+  maxRetries: number;
+  baseDelayMs: number;
+  maxDelayMs: number;
+}
+
 export interface DatabaseConfig {
   url: string;
   pool: DatabasePoolConfig;
   queryLogging: QueryLoggingConfig;
+  retry: RetryConfig;
 }
 
 export interface ApiConfig {
@@ -68,6 +75,11 @@ const config: Config = {
     queryLogging: {
       slowQueryThreshold: parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '100', 10),
       logAllQueries: process.env.LOG_ALL_QUERIES === 'true',
+    },
+    retry: {
+      maxRetries: parseInt(process.env.DB_RETRY_MAX || '3', 10),
+      baseDelayMs: parseInt(process.env.DB_RETRY_BASE_DELAY_MS || '1000', 10),
+      maxDelayMs: parseInt(process.env.DB_RETRY_MAX_DELAY_MS || '30000', 10),
     },
   },
 
