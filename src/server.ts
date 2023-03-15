@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
+import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -25,6 +26,18 @@ const PORT = config.port;
 
 // Parse JSON bodies
 app.use(express.json());
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // For swagger-ui
+      scriptSrc: ["'self'", "'unsafe-inline'"], // For swagger-ui
+      imgSrc: ["'self'", "data:", "validator.swagger.io"],
+    },
+  },
+}));
 
 // Request logging
 app.use(morgan('combined'));

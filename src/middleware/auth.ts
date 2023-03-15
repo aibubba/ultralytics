@@ -10,6 +10,24 @@ export interface AuthenticatedRequest extends Request {
 }
 
 /**
+ * Timing-safe string comparison to prevent timing attacks
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  
+  // If lengths differ, compare against a dummy buffer of same length
+  // This ensures constant time regardless of length difference
+  if (bufA.length !== bufB.length) {
+    const dummy = Buffer.alloc(bufA.length);
+    crypto.timingSafeEqual(bufA, dummy);
+    return false;
+  }
+  
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+/**
  * Validate API key from request header
  * API key should be sent in the X-API-Key header
  */
