@@ -317,6 +317,59 @@ function App() {
 }
 ```
 
+### Vue.js Integration
+
+Use the `useUltralytics` composable for Vue 3 applications:
+
+```vue
+<script setup>
+import { useUltralytics } from 'ultralytics/vue';
+
+const { track, identify, trackPageView, isInitialized } = useUltralytics({
+  endpoint: 'https://your-server.com',
+  apiKey: 'your-api-key',
+  autoTrackPageViews: true
+});
+
+const handleSignup = async (userId) => {
+  await identify(userId, { source: 'signup_form' });
+  await track('signup_completed', { method: 'email' });
+};
+</script>
+
+<template>
+  <div v-if="isInitialized">
+    <button @click="track('button_clicked', { buttonId: 'cta' })">
+      Click Me
+    </button>
+  </div>
+</template>
+```
+
+#### Vue Router Integration
+
+For automatic page tracking with Vue Router:
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+import { useUltralytics } from 'ultralytics/vue';
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [/* your routes */]
+});
+
+// Track page views on route changes
+router.afterEach((to) => {
+  const { trackPageView } = useUltralytics({
+    endpoint: 'https://your-server.com',
+    apiKey: 'your-api-key'
+  });
+  
+  trackPageView(to.path);
+});
+```
+
 ### Configuration Options
 
 ```typescript
