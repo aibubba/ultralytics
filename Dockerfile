@@ -1,4 +1,8 @@
-FROM node:18-alpine
+# Multi-architecture Dockerfile for Ultralytics
+# Supports both AMD64 and ARM64 (Apple Silicon, AWS Graviton, etc.)
+
+# Build stage
+FROM --platform=$BUILDPLATFORM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -15,12 +19,29 @@ COPY . .
 # Build TypeScript
 RUN npm run build:server
 
-# Remove dev dependencies for smaller production image
-RUN npm prune --production
+# Production stage
+FROM node:18-alpine AS production
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/docs ./docs
+COPY --from=builder /app/migrations ./migrations
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
+
+# Change ownership of app directory
+RUN chown -R nodejs:nodejs /app
 
 # Change to non-root user
 USER nodejs
