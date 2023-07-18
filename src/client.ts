@@ -25,6 +25,19 @@ interface BoundHandlers {
 const STORAGE_SESSION = 'ultralytics_session';
 const STORAGE_USER = 'ultralytics_user_id';
 
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+interface DebugInfo {
+  initialized: boolean;
+  endpoint: string | null;
+  sessionId: string | null;
+  userId: string | null;
+  autoTrack: boolean;
+  lastActivity: number | null;
+  sessionAge: number | null;
+  pendingEvents: number;
+}
+
 class UltralyticsClient {
   private _initialized = false;
   private _endpoint: string | null = null;
@@ -36,12 +49,84 @@ class UltralyticsClient {
   private _autoTrack = false;
   private _lastTrackedPath: string | null = null;
   private _debug = false;
+  private _pendingEvents = 0;
+  private _eventsSent = 0;
+  private _errorCount = 0;
 
   /**
-   * Log only if debug mode is enabled
+   * Log with level and formatting when debug mode is enabled
    */
-  private _log(...args: unknown[]): void {
-    if (this._debug) console.log('Ultralytics:', ...args);
+  private _log(level: LogLevel, message: string, data?: unknown): void {
+    if (!this._debug) return;
+    
+    const timestamp = new Date().toISOString();
+    const prefix = `[Ultralytics ${timestamp}]`;
+    
+    const logFn = level === 'error' ? console.error 
+                : level === 'warn' ? console.warn 
+                : console.log;
+    
+    if (data !== undefined) {
+      logFn(`${prefix} ${message}`, data);
+    } else {
+      logFn(`${prefix} ${message}`);
+    }
+  }
+
+  /**
+   * Log debug level message
+   */
+  private _logDebug(message: string, data?: unknown): void {
+    this._log('debug', message, data);
+  }
+
+  /**
+   * Log info level message
+   */
+  private _logInfo(message: string, data?: unknown): void {
+    this._log('info', message, data);
+  }
+
+  /**
+   * Log warning message
+   */
+  private _logWarn(message: string, data?: unknown): void {
+    this._log('warn', message, data);
+  }
+
+  /**
+   * Log error message
+   */
+  private _logError(message: string, data?: unknown): void {
+    this._log('error', message, data);
+    this._errorCount++;
+  }
+
+  /**
+   * Get debug information about the client state
+   */
+  getDebugInfo(): DebugInfo {
+    return {
+      initialized: this._initialized,
+      endpoint: this._endpoint,
+      sessionId: this._sessionId,
+      userId: this._userId,
+      autoTrack: this._autoTrack,
+      lastActivity: this._lastActivity,
+      sessionAge: this._lastActivity ? Date.now() - this._lastActivity : null,
+      pendingEvents: this._pendingEvents
+    };
+  }
+
+  /**
+   * Get event statistics (useful for debugging)
+   */
+  getStats(): { sent: number; errors: number; pending: number } {
+    return {
+      sent: this._eventsSent,
+      errors: this._errorCount,
+      pending: this._pendingEvents
+    };
   }
 
   /**
@@ -81,7 +166,11 @@ class UltralyticsClient {
       this._setupAutoTracking(options.trackInitialPageView !== false);
     }
 
-    this._log('initialized');
+    this._logInfo('Client initialized', {
+      endpoint: this._endpoint,
+      autoTrack: this._autoTrack,
+      sessionId: this._sessionId
+    });
   }
 
   /**
@@ -92,8 +181,10 @@ class UltralyticsClient {
     if (stored && (Date.now() - stored.lastActivity) < this._sessionTimeout) {
       this._sessionId = stored.id;
       this._lastActivity = stored.lastActivity;
+      this._logDebug('Session restored', { sessionId: this._sessionId });
     } else {
       this._sessionId = this._generateId();
+      this._logDebug('New session created', { sessionId: this._sessionId });
     }
     this._storeSession();
   }
@@ -103,7 +194,12 @@ class UltralyticsClient {
    */
   private _checkSession(): void {
     if (!this._lastActivity || (Date.now() - this._lastActivity) > this._sessionTimeout) {
+      const oldSessionId = this._sessionId;
       this._sessionId = this._generateId();
+      this._logDebug('Session expired, created new session', { 
+        oldSessionId, 
+        newSessionId: this._sessionId 
+      });
     }
     this._lastActivity = Date.now();
     this._storeSession();
@@ -141,6 +237,7 @@ class UltralyticsClient {
     const path = window.location.pathname;
     if (path !== this._lastTrackedPath) {
       this._lastTrackedPath = path;
+      this._logDebug('History change detected, tracking page view', { path });
       this.trackPageView();
     }
   }
@@ -204,25 +301,29 @@ class UltralyticsClient {
    */
   track(name: string, properties?: EventProperties): void {
     if (!this._initialized) {
-      console.error('Ultralytics: not initialized');
+      console.error('Ultralytics: not initialized. Call init() first.');
       return;
     }
 
     if (!this._sessionId) {
       this._sessionId = this._generateId();
       this._storeSession();
+      this._logDebug('Session created on track', { sessionId: this._sessionId });
     }
 
     this._lastActivity = Date.now();
     this._storeSession();
 
-    this._send('/api/events', {
+    const eventData = {
       name,
       properties: properties || {},
       sessionId: this._sessionId,
       userId: this._userId,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    this._logDebug('Tracking event', { name, properties });
+    this._send('/api/events', eventData);
   }
 
   /**
@@ -254,6 +355,7 @@ class UltralyticsClient {
    */
   destroy(): void {
     if (!this._initialized) return;
+    this._logInfo('Destroying client', this.getStats());
     this._removeEventListeners();
     this._initialized = false;
     this._endpoint = null;
@@ -261,7 +363,6 @@ class UltralyticsClient {
     this._userId = null;
     this._autoTrack = false;
     this._lastTrackedPath = null;
-    this._log('destroyed');
   }
 
   /**
@@ -276,11 +377,11 @@ class UltralyticsClient {
    */
   identify(userId: string, traits?: UserTraits): void {
     if (!this._initialized) {
-      console.error('Ultralytics: not initialized');
+      console.error('Ultralytics: not initialized. Call init() first.');
       return;
     }
     if (!userId) {
-      console.error('Ultralytics: userId is required');
+      console.error('Ultralytics: userId is required for identify()');
       return;
     }
 
@@ -288,7 +389,7 @@ class UltralyticsClient {
     this._storage.set(STORAGE_USER, userId);
 
     if (traits) this.track('identify', traits);
-    this._log('user identified', userId);
+    this._logInfo('User identified', { userId, hasTraits: !!traits });
   }
 
   /**
@@ -311,7 +412,7 @@ class UltralyticsClient {
    */
   trackBatch(events: BatchEvent[], callback?: BatchCallback): void {
     if (!this._initialized) {
-      const err = new Error('Ultralytics: not initialized');
+      const err = new Error('Ultralytics: not initialized. Call init() first.');
       console.error(err.message);
       callback?.(err);
       return;
@@ -335,6 +436,7 @@ class UltralyticsClient {
       timestamp: e.timestamp || new Date().toISOString()
     }));
 
+    this._logDebug('Tracking batch', { eventCount: events.length });
     this._sendBatch(prepared, callback);
   }
 
@@ -342,20 +444,32 @@ class UltralyticsClient {
    * Send batch to server
    */
   private _sendBatch(events: EventData[], callback?: BatchCallback): void {
+    this._pendingEvents += events.length;
     const xhr = new XMLHttpRequest();
     xhr.open('POST', this._endpoint + '/api/events/batch', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onreadystatechange = (): void => {
       if (xhr.readyState !== 4) return;
+      this._pendingEvents -= events.length;
+      
       if (xhr.status >= 200 && xhr.status < 300) {
+        this._eventsSent += events.length;
+        this._logDebug('Batch sent successfully', { 
+          count: events.length, 
+          status: xhr.status 
+        });
         try {
           callback?.(null, JSON.parse(xhr.responseText) as BatchResult);
         } catch {
           callback?.(null, { success: true });
         }
       } else {
-        console.error('Ultralytics: batch send failed', xhr.status);
+        this._logError('Batch send failed', { 
+          status: xhr.status, 
+          response: xhr.responseText,
+          eventCount: events.length
+        });
         callback?.(new Error('Batch failed: ' + xhr.status));
       }
     };
@@ -367,13 +481,27 @@ class UltralyticsClient {
    * Send single event to server
    */
   private _send(path: string, data: EventData): void {
+    this._pendingEvents++;
     const xhr = new XMLHttpRequest();
     xhr.open('POST', this._endpoint + path, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onreadystatechange = (): void => {
-      if (xhr.readyState === 4 && xhr.status >= 400) {
-        console.error('Ultralytics: send failed', xhr.status);
+      if (xhr.readyState !== 4) return;
+      this._pendingEvents--;
+      
+      if (xhr.status >= 200 && xhr.status < 300) {
+        this._eventsSent++;
+        this._logDebug('Event sent successfully', { 
+          name: data.name, 
+          status: xhr.status 
+        });
+      } else {
+        this._logError('Event send failed', { 
+          name: data.name,
+          status: xhr.status, 
+          response: xhr.responseText 
+        });
       }
     };
 

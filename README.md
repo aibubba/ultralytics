@@ -388,6 +388,48 @@ interface UltralyticsConfig {
 }
 ```
 
+### Debug Mode
+
+Enable debug mode to get detailed logging about client operations:
+
+```javascript
+Ultralytics.init({
+  endpoint: 'https://your-server.com',
+  apiKey: 'your-api-key',
+  debug: true  // Enable detailed logging
+});
+```
+
+When debug mode is enabled, you'll see logs for:
+- Client initialization
+- Session creation and restoration
+- Event tracking
+- API request success/failure
+- History changes (for SPA navigation)
+
+You can also inspect the client state programmatically:
+
+```javascript
+// Get current client state
+const debugInfo = Ultralytics.getDebugInfo();
+console.log(debugInfo);
+// {
+//   initialized: true,
+//   endpoint: 'https://your-server.com',
+//   sessionId: 'abc-123',
+//   userId: null,
+//   autoTrack: false,
+//   lastActivity: 1634567890123,
+//   sessionAge: 5000,
+//   pendingEvents: 0
+// }
+
+// Get event statistics
+const stats = Ultralytics.getStats();
+console.log(stats);
+// { sent: 42, errors: 0, pending: 1 }
+```
+
 ### Tracking Events
 
 Track custom events with any properties:
