@@ -370,6 +370,63 @@ router.afterEach((to) => {
 });
 ```
 
+### Svelte Integration
+
+Use the `createUltralytics` store for Svelte applications:
+
+```svelte
+<script>
+  import { createUltralytics } from 'ultralytics/svelte';
+  import { onMount } from 'svelte';
+
+  const analytics = createUltralytics({
+    endpoint: 'https://your-server.com',
+    apiKey: 'your-api-key',
+    autoTrackPageViews: true
+  });
+
+  onMount(() => {
+    analytics.init();
+  });
+
+  function handleSignup(userId) {
+    analytics.identify(userId, { source: 'signup_form' });
+    analytics.track('signup_completed', { method: 'email' });
+  }
+</script>
+
+{#if $analytics.isInitialized}
+  <button on:click={() => analytics.track('button_clicked', { buttonId: 'cta' })}>
+    Click Me
+  </button>
+{/if}
+```
+
+#### SvelteKit Integration
+
+For SvelteKit applications with automatic page tracking:
+
+```svelte
+<!-- src/routes/+layout.svelte -->
+<script>
+  import { createUltralytics, trackPageViews } from 'ultralytics/svelte';
+  import { onMount } from 'svelte';
+
+  const analytics = createUltralytics({
+    endpoint: 'https://your-server.com',
+    apiKey: 'your-api-key'
+  });
+
+  onMount(() => {
+    analytics.init();
+  });
+</script>
+
+<div use:trackPageViews={analytics}>
+  <slot />
+</div>
+```
+
 ### Configuration Options
 
 ```typescript

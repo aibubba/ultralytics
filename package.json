@@ -85,10 +85,14 @@
   },
   "peerDependencies": {
     "react": ">=16.8.0",
+    "svelte": ">=3.0.0",
     "vue": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "svelte": {
       "optional": true
     },
     "vue": {
