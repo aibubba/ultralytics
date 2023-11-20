@@ -1,56 +1,100 @@
 # Multi-architecture Dockerfile for Ultralytics
 # Supports both AMD64 and ARM64 (Apple Silicon, AWS Graviton, etc.)
+# Optimized for Docker build cache efficiency
 
-# Build stage
-FROM --platform=$BUILDPLATFORM node:18-alpine AS builder
+# ============================================
+# Stage 1: Dependencies
+# This stage is cached unless package*.json changes
+# ============================================
+FROM --platform=$BUILDPLATFORM node:18-alpine AS deps
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy ONLY package files first to maximize cache hits
+COPY package.json package-lock.json ./
 
-# Install all dependencies (including dev deps for TypeScript compilation)
+# Install ALL dependencies (dev + prod needed for build)
+# Using --frozen-lockfile equivalent with npm ci
 RUN npm ci
 
-# Copy application source
-COPY . .
+# ============================================
+# Stage 2: Build
+# Rebuilds only when source code changes
+# ============================================
+FROM --platform=$BUILDPLATFORM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
+
+# Copy TypeScript config first (rarely changes)
+COPY tsconfig.json ./
+
+# Copy source code
+COPY src ./src
 
 # Build TypeScript
 RUN npm run build:server
 
-# Production stage
-FROM node:18-alpine AS production
+# ============================================
+# Stage 3: Production dependencies
+# Cached separately from full dependency install
+# ============================================
+FROM --platform=$BUILDPLATFORM node:18-alpine AS prod-deps
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+# Clean npm cache to reduce image size
+RUN npm ci --omit=dev && \
+    npm cache clean --force
 
-# Copy built files from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/docs ./docs
-COPY --from=builder /app/migrations ./migrations
+# ============================================
+# Stage 4: Production runtime
+# Minimal image with only what's needed to run
+# ============================================
+FROM node:18-alpine AS production
 
-# Create non-root user for security
+# Add labels for image metadata
+LABEL org.opencontainers.image.title="Ultralytics"
+LABEL org.opencontainers.image.description="Self-hosted analytics server"
+LABEL org.opencontainers.image.source="https://github.com/aibubba/ultralytics"
+
+WORKDIR /app
+
+# Create non-root user for security FIRST
+# This layer is cached and rarely changes
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Change ownership of app directory
-RUN chown -R nodejs:nodejs /app
+# Copy production dependencies from prod-deps stage
+COPY --from=prod-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Change to non-root user
+# Copy package.json for runtime metadata
+COPY --chown=nodejs:nodejs package.json ./
+
+# Copy built files from builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+
+# Copy static assets (docs, migrations) - these change infrequently
+COPY --chown=nodejs:nodejs docs ./docs
+COPY --chown=nodejs:nodejs migrations ./migrations
+
+# Switch to non-root user
 USER nodejs
+
+# Set production environment
+ENV NODE_ENV=production
 
 # Expose server port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check with longer start period for cold starts
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Start the application
