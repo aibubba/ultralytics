@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2023-12-15
+
+### Added
+- Vue.js integration with `useUltralytics` composable
+- Svelte integration with reactive store
+- ARM64 Docker image support for Apple Silicon and ARM servers
+- Database connection retry logic with exponential backoff
+- Materialized views for improved dashboard query performance
+- New database indexes for analytics queries
+- Enhanced debug mode with better error context
+
+### Changed
+- **BREAKING**: Updated to Node.js 18 LTS (minimum required version)
+- Improved Docker build caching for faster CI/CD pipelines
+- Updated all dependencies to latest versions
+- Enhanced error messages with more debugging context
+
+### Security
+- Added Helmet.js for security headers
+- Timing-safe API key comparison to prevent timing attacks
+- Updated vulnerable dependencies identified in security audit
+
+### Performance
+- Optimized dashboard queries with materialized views
+- Added indexes for funnel and cohort analytics queries
+- Multi-stage Docker builds for smaller images
+
 ## [0.5.0] - 2022-12-12
 
 ### Added
