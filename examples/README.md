@@ -26,6 +26,29 @@ npm start
 
 The app will be available at http://localhost:3000
 
+### Next.js App
+
+A Next.js 14 application using the App Router with Ultralytics integration.
+
+**Location:** `nextjs-app/`
+
+**Features demonstrated:**
+- App Router integration
+- Automatic page view tracking on navigation
+- Custom event tracking
+- E-commerce tracking patterns
+- Client-side only initialization (SSR-safe)
+
+**Running the example:**
+
+```bash
+cd nextjs-app
+npm install
+npm run dev
+```
+
+The app will be available at http://localhost:3001
+
 ## Prerequisites
 
 Before running any example, make sure you have:
@@ -45,5 +68,5 @@ Each example includes a configuration section where you'll need to set:
 
 We plan to add examples for:
 - Vue.js
-- Next.js
+- Svelte
 - Plain JavaScript
