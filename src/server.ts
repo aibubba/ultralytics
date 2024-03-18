@@ -96,6 +96,47 @@ app.get('/health', async (_req: Request, res: Response) => {
   res.status(statusCode).json(health);
 });
 
+// Kubernetes liveness probe - checks if the process is running
+// Returns 200 if the server can respond, regardless of dependencies
+app.get('/healthz', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Kubernetes readiness probe - checks if the server is ready to accept traffic
+// Returns 200 only if all dependencies (database) are available
+app.get('/readyz', async (_req: Request, res: Response) => {
+  try {
+    // Check database connection with a timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database check timeout')), 5000);
+    });
+    
+    const dbCheckPromise = db.query('SELECT 1');
+    await Promise.race([dbCheckPromise, timeoutPromise]);
+    
+    res.status(200).json({
+      status: 'ready',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: 'ok'
+      }
+    });
+  } catch (error) {
+    console.error('Readiness check failed:', (error as Error).message);
+    res.status(503).json({
+      status: 'not ready',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: 'failed'
+      },
+      error: (error as Error).message
+    });
+  }
+});
+
 // Prometheus metrics endpoint
 app.get('/metrics', async (_req: Request, res: Response) => {
   try {
