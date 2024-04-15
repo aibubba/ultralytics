@@ -1,212 +1,33 @@
 # Ultralytics
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
+[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Tests](https://github.com/aibubba/ultralytics/workflows/Tests/badge.svg)](https://github.com/aibubba/ultralytics/actions)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
 
-Self-hosted analytics for web applications.
+**Self-hosted analytics for web applications.** Track user behavior on your websites without sending data to third parties.
 
-## Overview
+## Why Ultralytics?
 
-Ultralytics is a privacy-focused, self-hosted analytics solution. Track user behavior on your websites without sending data to third parties.
+- **Privacy-first**: All data stays on your servers - no third-party tracking
+- **Lightweight client**: ~3kb gzipped JavaScript library
+- **Framework integrations**: React, Vue, Svelte, and vanilla JavaScript
+- **Production-ready**: Docker, Kubernetes, and comprehensive monitoring
+- **Full control**: Open source, self-hosted, and fully customizable
 
-## Installation
+## Quick Start
 
-### Server Setup
+### Docker (Recommended)
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/aibubba/ultralytics.git
 cd ultralytics
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up PostgreSQL and create a database:
-```sql
-CREATE DATABASE ultralytics;
-```
-
-4. Run the schema:
-```bash
-psql -d ultralytics -f schema.sql
-```
-
-5. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your database credentials
-```
-
-6. Start the server:
-```bash
-npm start
-```
-
-### Docker Setup
-
-The easiest way to get started is with Docker:
-
-1. Clone the repository:
-```bash
-git clone https://github.com/aibubba/ultralytics.git
-cd ultralytics
-```
-
-2. Start the services:
-```bash
 docker-compose up -d
 ```
 
-This will start:
-- The Ultralytics server on port 3000
-- PostgreSQL database on port 5432
+Ultralytics is now running on `http://localhost:3000`. For detailed setup instructions, see the [Getting Started Guide](docs/getting-started.md).
 
-3. Verify it's running:
-```bash
-curl http://localhost:3000/health
-```
-
-To stop the services:
-```bash
-docker-compose down
-```
-
-To stop and remove all data:
-```bash
-docker-compose down -v
-```
-
-### Kubernetes Deployment
-
-For production deployments, Kubernetes manifests are provided in the `k8s/` directory.
-
-1. Create your secrets file:
-```bash
-cp k8s/secret.yaml.example k8s/secret.yaml
-# Edit k8s/secret.yaml with your credentials
-```
-
-2. Apply the manifests:
-```bash
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/secret.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-```
-
-3. Verify the deployment:
-```bash
-kubectl get pods -l app=ultralytics
-kubectl get service ultralytics
-```
-
-The deployment includes:
-- 2 replicas by default (configurable in deployment.yaml)
-- Resource limits and requests
-- ConfigMap for non-sensitive configuration
-- Secret for sensitive data (database credentials, API keys)
-
-### Client Setup
-
-Include the client library in your HTML:
-
-```html
-<script src="https://your-server.com/ultralytics.js"></script>
-<script>
-  Ultralytics.init({
-    endpoint: 'https://your-server.com'
-  });
-</script>
-```
-
-## Configuration
-
-Configuration is done via environment variables. See `.env.example` for all available options:
-
-- `DATABASE_URL` - PostgreSQL connection string
-- `PORT` - Server port (default: 3000)
-- `MAX_BATCH_SIZE` - Maximum events per batch request (default: 100)
-- `LOG_LEVEL` - Logging level (default: info)
-
-## Database Migrations
-
-Ultralytics uses [node-pg-migrate](https://github.com/salsita/node-pg-migrate) for database migrations.
-
-### Running Migrations
-
-Apply all pending migrations:
-```bash
-npm run migrate:up
-```
-
-Rollback the last migration:
-```bash
-npm run migrate:down
-```
-
-### Creating a New Migration
-
-```bash
-npm run migrate create my_migration_name
-```
-
-This creates a new migration file in the `migrations/` directory.
-
-## Database Backups
-
-Ultralytics includes a backup script for PostgreSQL databases.
-
-### Running a Backup
-
-```bash
-# Set your database URL
-export DATABASE_URL=postgres://user:password@localhost:5432/ultralytics
-
-# Run the backup
-./scripts/backup.sh
-
-# Or specify a custom output directory
-./scripts/backup.sh /path/to/backups
-```
-
-### Backup Configuration
-
-- `DATABASE_URL` - PostgreSQL connection string (required)
-- `BACKUP_RETENTION_DAYS` - Days to keep backups (default: 7)
-
-Backups are automatically compressed with gzip and old backups are cleaned up based on the retention policy.
-
-## Testing
-
-Ultralytics uses Jest for testing. Tests include server API tests and client library tests.
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm test -- --coverage
-```
-
-### Test Requirements
-
-Tests require a PostgreSQL database. Set the `DATABASE_URL` environment variable:
-
-```bash
-export DATABASE_URL=postgres://user:password@localhost:5432/ultralytics_test
-```
-
-## Basic Usage
-
-### JavaScript (Browser)
-
-Include the client library in your HTML:
+### Add to Your Website
 
 ```html
 <script src="https://your-server.com/ultralytics.min.js"></script>
@@ -215,326 +36,174 @@ Include the client library in your HTML:
     endpoint: 'https://your-server.com',
     apiKey: 'your-api-key'
   });
-
-  // Track a page view
-  Ultralytics.trackPageView();
-
-  // Track a custom event
-  Ultralytics.track('button_click', {
-    buttonId: 'signup-button',
-    page: '/home'
-  });
 </script>
 ```
 
-#### Automatic Page View Tracking
-
-For single-page applications (SPAs), you can enable automatic page view tracking:
-
-```html
-<script src="https://your-server.com/ultralytics.min.js"></script>
-<script>
-  Ultralytics.init({
-    endpoint: 'https://your-server.com',
-    apiKey: 'your-api-key',
-    autoTrack: true  // Automatically tracks page views on navigation
-  });
-</script>
-```
-
-This will automatically track:
-- Initial page load
-- Browser back/forward navigation
-- SPA navigation (via history.pushState and history.replaceState)
-
-To disable tracking the initial page load:
+### Track Events
 
 ```javascript
-Ultralytics.init({
-  endpoint: 'https://your-server.com',
-  autoTrack: true,
-  trackInitialPageView: false  // Don't track initial page load
-});
-```
+// Track page views
+Ultralytics.trackPageView();
 
-### TypeScript / ES Modules
-
-Install the package:
-
-```bash
-npm install ultralytics
-```
-
-Import and use:
-
-```typescript
-import { Ultralytics } from 'ultralytics';
-
-// Initialize the client
-const analytics = new Ultralytics({
-  endpoint: 'https://your-server.com',
-  apiKey: 'your-api-key'
-});
-
-// Track events with full type safety
-analytics.track('purchase', {
-  productId: 'prod_123',
-  amount: 99.99,
-  currency: 'USD'
+// Track custom events
+Ultralytics.track('button_click', {
+  buttonId: 'signup-button',
+  page: '/pricing'
 });
 
 // Identify users
-analytics.identify('user_456', {
+Ultralytics.identify('user-123', {
   email: 'user@example.com',
   plan: 'premium'
 });
 ```
 
-### React Integration
+## Framework Integrations
 
-Use the `useUltralytics` hook for React applications:
+### React
 
 ```tsx
 import { useUltralytics } from 'ultralytics/react';
 
 function App() {
-  const { track, identify, trackPageView } = useUltralytics({
-    endpoint: 'https://your-server.com',
-    apiKey: 'your-api-key',
-    autoTrackPageViews: true  // Automatically track page views
-  });
-
-  const handleSignup = async (userId: string) => {
-    await identify(userId, { source: 'signup_form' });
-    await track('signup_completed', { method: 'email' });
-  };
-
-  return (
-    <button onClick={() => track('button_clicked', { buttonId: 'cta' })}>
-      Click Me
-    </button>
-  );
-}
-```
-
-### Vue.js Integration
-
-Use the `useUltralytics` composable for Vue 3 applications:
-
-```vue
-<script setup>
-import { useUltralytics } from 'ultralytics/vue';
-
-const { track, identify, trackPageView, isInitialized } = useUltralytics({
-  endpoint: 'https://your-server.com',
-  apiKey: 'your-api-key',
-  autoTrackPageViews: true
-});
-
-const handleSignup = async (userId) => {
-  await identify(userId, { source: 'signup_form' });
-  await track('signup_completed', { method: 'email' });
-};
-</script>
-
-<template>
-  <div v-if="isInitialized">
-    <button @click="track('button_clicked', { buttonId: 'cta' })">
-      Click Me
-    </button>
-  </div>
-</template>
-```
-
-#### Vue Router Integration
-
-For automatic page tracking with Vue Router:
-
-```javascript
-import { createRouter, createWebHistory } from 'vue-router';
-import { useUltralytics } from 'ultralytics/vue';
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes: [/* your routes */]
-});
-
-// Track page views on route changes
-router.afterEach((to) => {
-  const { trackPageView } = useUltralytics({
-    endpoint: 'https://your-server.com',
-    apiKey: 'your-api-key'
-  });
-  
-  trackPageView(to.path);
-});
-```
-
-### Svelte Integration
-
-Use the `createUltralytics` store for Svelte applications:
-
-```svelte
-<script>
-  import { createUltralytics } from 'ultralytics/svelte';
-  import { onMount } from 'svelte';
-
-  const analytics = createUltralytics({
+  const { track, identify } = useUltralytics({
     endpoint: 'https://your-server.com',
     apiKey: 'your-api-key',
     autoTrackPageViews: true
   });
 
-  onMount(() => {
-    analytics.init();
-  });
-
-  function handleSignup(userId) {
-    analytics.identify(userId, { source: 'signup_form' });
-    analytics.track('signup_completed', { method: 'email' });
-  }
-</script>
-
-{#if $analytics.isInitialized}
-  <button on:click={() => analytics.track('button_clicked', { buttonId: 'cta' })}>
-    Click Me
-  </button>
-{/if}
+  return (
+    <button onClick={() => track('cta_clicked')}>
+      Get Started
+    </button>
+  );
+}
 ```
 
-#### SvelteKit Integration
+### Vue
 
-For SvelteKit applications with automatic page tracking:
+```vue
+<script setup>
+import { useUltralytics } from 'ultralytics/vue';
+
+const { track } = useUltralytics({
+  endpoint: 'https://your-server.com',
+  apiKey: 'your-api-key'
+});
+</script>
+```
+
+### Svelte
 
 ```svelte
-<!-- src/routes/+layout.svelte -->
 <script>
-  import { createUltralytics, trackPageViews } from 'ultralytics/svelte';
-  import { onMount } from 'svelte';
+import { createUltralytics } from 'ultralytics/svelte';
 
-  const analytics = createUltralytics({
-    endpoint: 'https://your-server.com',
-    apiKey: 'your-api-key'
-  });
-
-  onMount(() => {
-    analytics.init();
-  });
-</script>
-
-<div use:trackPageViews={analytics}>
-  <slot />
-</div>
-```
-
-### Configuration Options
-
-```typescript
-interface UltralyticsConfig {
-  // Required: Server endpoint URL
-  endpoint: string;
-  
-  // Optional: API key for authentication
-  apiKey?: string;
-  
-  // Optional: Enable automatic page view tracking (React only)
-  autoTrackPageViews?: boolean;
-  
-  // Optional: Enable debug logging
-  debug?: boolean;
-}
-```
-
-### Debug Mode
-
-Enable debug mode to get detailed logging about client operations:
-
-```javascript
-Ultralytics.init({
+const analytics = createUltralytics({
   endpoint: 'https://your-server.com',
-  apiKey: 'your-api-key',
-  debug: true  // Enable detailed logging
+  apiKey: 'your-api-key'
 });
-```
-
-When debug mode is enabled, you'll see logs for:
-- Client initialization
-- Session creation and restoration
-- Event tracking
-- API request success/failure
-- History changes (for SPA navigation)
-
-You can also inspect the client state programmatically:
-
-```javascript
-// Get current client state
-const debugInfo = Ultralytics.getDebugInfo();
-console.log(debugInfo);
-// {
-//   initialized: true,
-//   endpoint: 'https://your-server.com',
-//   sessionId: 'abc-123',
-//   userId: null,
-//   autoTrack: false,
-//   lastActivity: 1634567890123,
-//   sessionAge: 5000,
-//   pendingEvents: 0
-// }
-
-// Get event statistics
-const stats = Ultralytics.getStats();
-console.log(stats);
-// { sent: 42, errors: 0, pending: 1 }
-```
-
-### Tracking Events
-
-Track custom events with any properties:
-
-```javascript
-// JavaScript
-Ultralytics.track('button_click', {
-  buttonId: 'signup-button',
-  page: '/home'
-});
-
-// TypeScript - with type checking
-analytics.track('form_submitted', {
-  formId: 'contact',
-  fields: ['name', 'email', 'message']
-});
-```
-
-## API Endpoints
-
-### Health Check
-```
-GET /health
-```
-
-Returns server health status.
-
-### Track Event
-```
-POST /api/events
-Content-Type: application/json
-
-{
-  "name": "page_view",
-  "properties": {
-    "page": "/home"
-  }
-}
+</script>
 ```
 
 ## Features
 
-- **Privacy-focused**: All data stays on your servers
-- **Lightweight client**: ~3kb gzipped JavaScript library for browsers
-- **Session tracking**: Automatic session management with 30-minute timeout
-- **Event querying**: Filter events by date range, event name, or session
-- **Easy setup**: Docker and docker-compose included
+### Event Tracking
+Track page views, user interactions, and custom events with rich metadata.
+
+### Session Management
+Automatic session tracking with configurable timeout (default: 30 minutes).
+
+### User Identification
+Associate events with authenticated users for cross-session analysis.
+
+### Analytics Queries
+Built-in endpoints for funnels, cohorts, and time-series analysis.
+
+### Data Export
+Export your data in CSV or JSON format for external analysis.
+
+### Privacy Controls
+GDPR-compliant data deletion and anonymization capabilities.
+
+### Prometheus Metrics
+Built-in `/metrics` endpoint for monitoring with Prometheus/Grafana.
+
+## Documentation
+
+- [Getting Started](docs/getting-started.md) - Quick start guide
+- [Configuration](docs/configuration.md) - All configuration options
+- [API Reference](docs/api-reference.md) - Complete REST API documentation
+- [Privacy](docs/privacy.md) - Privacy features and GDPR compliance
+- [Architecture](docs/architecture.md) - System design overview
+- [SSL Setup](docs/ssl-setup.md) - HTTPS configuration
+
+## Deployment Options
+
+### Docker Compose
+
+For development and simple deployments:
+
+```bash
+docker-compose up -d
+```
+
+### Docker Compose (Production)
+
+For production with nginx and SSL:
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Kubernetes
+
+For scalable production deployments:
+
+```bash
+kubectl apply -f k8s/
+```
+
+See [Production Deployment](docs/production-deployment.md) for detailed instructions.
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL 12+
+
+### Setup
+
+```bash
+npm install
+cp .env.example .env
+# Edit .env with your database credentials
+npm run migrate:up
+npm start
+```
+
+### Running Tests
+
+```bash
+npm test
+```
+
+### Building the Client
+
+```bash
+npm run build
+```
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
 Apache 2.0 - See [LICENSE](LICENSE) for details.
+
+## Support
+
+- [GitHub Issues](https://github.com/aibubba/ultralytics/issues) - Bug reports and feature requests
+- [Documentation](docs/) - Detailed guides and references

@@ -78,9 +78,9 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Prerequisites
 
-- Node.js 14 or later
+- Node.js 18 or later (LTS recommended)
 - PostgreSQL 12 or later
-- npm 7 or later
+- npm 9 or later (comes with Node.js 18+)
 
 ### Local Setup
 
