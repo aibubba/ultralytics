@@ -14,6 +14,9 @@ pids
 # Coverage
 coverage/
 
+# Benchmark results
+benchmarks/results/*.json
+
 # Playwright
 playwright-report/
 test-results/

@@ -34,7 +34,11 @@
     "migrate:down": "node-pg-migrate down",
     "test": "jest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "benchmark": "ts-node benchmarks/ingestion.bench.ts && ts-node benchmarks/queries.bench.ts && ts-node benchmarks/client.bench.ts",
+    "benchmark:ingestion": "ts-node benchmarks/ingestion.bench.ts",
+    "benchmark:queries": "ts-node benchmarks/queries.bench.ts",
+    "benchmark:client": "ts-node benchmarks/client.bench.ts"
   },
   "repository": {
     "type": "git",
