@@ -14,6 +14,12 @@ export interface UltralyticsOptions {
   trackInitialPageView?: boolean;
   /** Enable debug mode for verbose logging (default: false) */
   debug?: boolean;
+  /** Session timeout in milliseconds (default: 30 minutes) */
+  sessionTimeout?: number;
+  /** Respect Do Not Track browser setting (default: true) */
+  respectDoNotTrack?: boolean;
+  /** Custom session ID (optional - auto-generated if not provided) */
+  sessionId?: string;
 }
 
 /**
@@ -83,3 +89,29 @@ export interface BatchResult {
  * Callback function for batch operations
  */
 export type BatchCallback = (error: Error | null, result?: BatchResult) => void;
+
+/**
+ * Client statistics
+ */
+export interface ClientStats {
+  /** Total events sent successfully */
+  sent: number;
+  /** Total errors encountered */
+  errors: number;
+  /** Events currently pending */
+  pending: number;
+}
+
+/**
+ * Debug information about client state
+ */
+export interface DebugInfo {
+  initialized: boolean;
+  endpoint: string | null;
+  sessionId: string | null;
+  userId: string | null;
+  autoTrack: boolean;
+  lastActivity: number | null;
+  sessionAge: number | null;
+  pendingEvents: number;
+}

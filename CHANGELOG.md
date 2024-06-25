@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New `reset()` method for clearing client state on logout
+- Support for custom `sessionId` in init options
+- Support for custom `sessionTimeout` in init options
+- `respectDoNotTrack` option (default: true) to honor browser DNT setting
+- `ClientStats` and `DebugInfo` types exported for TypeScript users
+
+### Deprecated
+- `trackEvent()` method deprecated in favor of `track()` - will be removed in v2.0.0
+
+### Changed
+- Finalized TypeScript type exports for 1.0 release
+
 ## [0.9.0] - 2023-12-15
 
 ### Added

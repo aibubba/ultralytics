@@ -13,6 +13,8 @@ import type {
   StoredSession,
   BatchResult,
   BatchCallback,
+  ClientStats,
+  DebugInfo,
 } from './types';
 
 interface BoundHandlers {
@@ -26,17 +28,6 @@ const STORAGE_SESSION = 'ultralytics_session';
 const STORAGE_USER = 'ultralytics_user_id';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-interface DebugInfo {
-  initialized: boolean;
-  endpoint: string | null;
-  sessionId: string | null;
-  userId: string | null;
-  autoTrack: boolean;
-  lastActivity: number | null;
-  sessionAge: number | null;
-  pendingEvents: number;
-}
 
 class UltralyticsClient {
   private _initialized = false;
@@ -121,7 +112,7 @@ class UltralyticsClient {
   /**
    * Get event statistics (useful for debugging)
    */
-  getStats(): { sent: number; errors: number; pending: number } {
+  getStats(): ClientStats {
     return {
       sent: this._eventsSent,
       errors: this._errorCount,
@@ -131,10 +122,17 @@ class UltralyticsClient {
 
   /**
    * Initialize the Ultralytics client
+   * @param options - Configuration options
    */
   init(options: UltralyticsOptions): void {
     if (!options?.endpoint) {
       console.error('Ultralytics: endpoint is required');
+      return;
+    }
+
+    // Respect Do Not Track if enabled (default: true)
+    if (options.respectDoNotTrack !== false && this._isDoNotTrackEnabled()) {
+      this._logInfo('Do Not Track is enabled, tracking disabled');
       return;
     }
 
@@ -145,9 +143,14 @@ class UltralyticsClient {
     this._lastActivity = Date.now();
     this._autoTrack = options.autoTrack || false;
     this._debug = options.debug || false;
+    
+    // Set session timeout if provided
+    if (options.sessionTimeout) {
+      this._sessionTimeout = options.sessionTimeout;
+    }
 
-    // Initialize session synchronously
-    this._initSession();
+    // Initialize session (use provided sessionId or generate new)
+    this._initSession(options.sessionId);
     this._initialized = true;
     this._restoreUserId();
 
@@ -174,9 +177,29 @@ class UltralyticsClient {
   }
 
   /**
-   * Initialize or restore session
+   * Check if Do Not Track is enabled in browser
    */
-  private _initSession(): void {
+  private _isDoNotTrackEnabled(): boolean {
+    const nav = navigator as Navigator & { doNotTrack?: string; msDoNotTrack?: string };
+    const win = window as Window & { doNotTrack?: string };
+    return nav.doNotTrack === '1' || 
+           nav.doNotTrack === 'yes' || 
+           nav.msDoNotTrack === '1' ||
+           win.doNotTrack === '1';
+  }
+
+  /**
+   * Initialize or restore session
+   * @param providedSessionId - Optional session ID to use instead of generating
+   */
+  private _initSession(providedSessionId?: string): void {
+    if (providedSessionId) {
+      this._sessionId = providedSessionId;
+      this._logDebug('Using provided session ID', { sessionId: this._sessionId });
+      this._storeSession();
+      return;
+    }
+
     const stored = this._getStoredSession();
     if (stored && (Date.now() - stored.lastActivity) < this._sessionTimeout) {
       this._sessionId = stored.id;
@@ -367,9 +390,25 @@ class UltralyticsClient {
 
   /**
    * Track a custom event (alias with eventType)
+   * @deprecated Use track() directly instead. This method will be removed in v2.0.0.
    */
   trackEvent(eventName: string, properties?: EventProperties): void {
+    console.warn('Ultralytics: trackEvent() is deprecated. Use track() instead.');
     this.track(eventName, { eventType: 'custom', ...properties });
+  }
+
+  /**
+   * Reset the client state without destroying listeners
+   * Useful for single-page apps when a user logs out
+   */
+  reset(): void {
+    this._logInfo('Resetting client state');
+    this._sessionId = this._generateId();
+    this._userId = null;
+    this._storage.remove(STORAGE_USER);
+    this._storeSession();
+    this._eventsSent = 0;
+    this._errorCount = 0;
   }
 
   /**
