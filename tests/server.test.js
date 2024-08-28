@@ -122,6 +122,39 @@ describe('Ultralytics API', () => {
 
       expect(response.body.error).toBeDefined();
     });
+
+    it('should handle large batches (>1000 events) correctly', async () => {
+      // Generate a large batch of events
+      const largeEventCount = 1500;
+      let eventIdCounter = 0;
+      db.storeEvent.mockImplementation(() => {
+        eventIdCounter++;
+        return Promise.resolve({ id: eventIdCounter });
+      });
+      db.updateSession.mockResolvedValue();
+
+      const events = Array.from({ length: largeEventCount }, (_, i) => ({
+        name: `event_${i}`,
+        properties: { index: i },
+        sessionId: `session_${i % 10}` // 10 unique sessions
+      }));
+
+      const response = await request(app)
+        .post('/api/events/batch')
+        .send({ events })
+        .expect(201);
+
+      // All events should be processed
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(largeEventCount);
+      expect(response.body.eventIds).toHaveLength(largeEventCount);
+      
+      // storeEvent should be called for each event
+      expect(db.storeEvent).toHaveBeenCalledTimes(largeEventCount);
+      
+      // Sessions should be updated (10 unique sessions)
+      expect(db.updateSession).toHaveBeenCalledTimes(10);
+    });
   });
 
   describe('GET /api/events', () => {

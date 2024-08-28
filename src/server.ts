@@ -202,28 +202,43 @@ app.post('/api/events/batch', async (req: Request, res: Response, next: NextFunc
       throw new ValidationError(validation.errors || 'Validation failed');
     }
 
-    // Store all events
-    // BUG: For large batches (>1000), this can cause memory issues
-    // and some events may be silently dropped
+    // Process events in chunks to avoid memory issues with large batches
+    const CHUNK_SIZE = 100;
     const results: number[] = [];
     const sessionsToUpdate = new Set<string>();
 
+    // Process in chunks for better memory management and reliability
+    for (let i = 0; i < events.length; i += CHUNK_SIZE) {
+      const chunk = events.slice(i, i + CHUNK_SIZE);
+      
+      // Process each event in the chunk
+      const chunkPromises = chunk.map(async (eventData: {
+        name: string;
+        properties?: Record<string, unknown>;
+        sessionId?: string;
+        userId?: string;
+        timestamp?: string;
+      }) => {
+        const event = {
+          name: eventData.name,
+          properties: sanitizeEventProperties(eventData.properties || {}) as Record<string, unknown>,
+          sessionId: eventData.sessionId || null,
+          userId: eventData.userId || null,
+          timestamp: eventData.timestamp ? new Date(eventData.timestamp) : new Date()
+        };
 
-    for (const eventData of events) {
-      const event = {
-        name: eventData.name,
-        properties: sanitizeEventProperties(eventData.properties || {}) as Record<string, unknown>,
-        sessionId: eventData.sessionId || null,
-        userId: eventData.userId || null,
-        timestamp: eventData.timestamp ? new Date(eventData.timestamp) : new Date()
-      };
+        const result = await db.storeEvent(event);
+        
+        if (eventData.sessionId) {
+          sessionsToUpdate.add(eventData.sessionId);
+        }
+        
+        return result.id;
+      });
 
-      const result = await db.storeEvent(event);
-      results.push(result.id);
-
-      if (eventData.sessionId) {
-        sessionsToUpdate.add(eventData.sessionId);
-      }
+      // Wait for the chunk to complete before processing the next
+      const chunkResults = await Promise.all(chunkPromises);
+      results.push(...chunkResults);
     }
 
     // Update sessions
