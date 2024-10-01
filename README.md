@@ -1,6 +1,6 @@
 # Ultralytics
 
-[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Tests](https://github.com/aibubba/ultralytics/workflows/Tests/badge.svg)](https://github.com/aibubba/ultralytics/actions)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)

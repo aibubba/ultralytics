@@ -7,18 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2024-10-01
+
+This is the first stable release of Ultralytics! After 6+ years of development and testing, we're confident the API is stable and ready for production use.
+
 ### Added
 - New `reset()` method for clearing client state on logout
 - Support for custom `sessionId` in init options
 - Support for custom `sessionTimeout` in init options
 - `respectDoNotTrack` option (default: true) to honor browser DNT setting
 - `ClientStats` and `DebugInfo` types exported for TypeScript users
+- Production deployment guide with comprehensive documentation
+- Scaling guide for high-volume deployments
+- End-to-end test suite with Playwright
+- Next.js example application
+- Kubernetes health check probes (`/healthz` and `/readyz`)
+- Database partitioning migration for large-scale deployments
+- Performance benchmarks and testing suite
+
+### Fixed
+- Edge case in batch processing for large batches (>1000 events)
+- Various dependency security updates
+
+### Changed
+- Finalized TypeScript type exports for 1.0 release
+- Node.js 18 LTS is now the minimum supported version
+- API is now considered stable - breaking changes will follow semver
 
 ### Deprecated
 - `trackEvent()` method deprecated in favor of `track()` - will be removed in v2.0.0
 
-### Changed
-- Finalized TypeScript type exports for 1.0 release
+### Migration Guide
+
+Upgrading from v0.9.0 to v1.0.0:
+
+1. Update your package: `npm install ultralytics@1.0.0`
+2. Review deprecated methods - `trackEvent()` should be replaced with `track()`
+3. (Optional) Run the new database migration for partitioning: `npm run migrate`
+4. (Optional) Update Kubernetes deployments to use new health check endpoints
+
+No breaking changes from v0.9.0.
 
 ## [0.9.0] - 2023-12-15
 
