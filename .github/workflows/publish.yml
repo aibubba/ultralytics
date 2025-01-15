@@ -19,9 +19,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Configure npm registry
-        run: npm config set registry https://registry.npmjs.org/
+      - name: Check npm version
+        run: npm --version
 
       - name: Install dependencies
         run: npm install
@@ -29,5 +30,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Publish to NPM
+      - name: Publish to NPM with provenance
         run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
