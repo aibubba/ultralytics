@@ -202,3 +202,6 @@ export async function getSession(sessionId: string): Promise<Session | null> {
 
   return result.rows[0] || null;
 }
+
+// Default export for backward compatibility
+export default pool;
