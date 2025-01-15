@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-01-15
+
+### Added
+- GitHub Actions workflow for automated NPM publishing with provenance
+- Uses OpenID Connect (OIDC) for secure, tokenless authentication
+
 ## [1.0.0] - 2024-10-01
 
 This is the first stable release of Ultralytics! After 6+ years of development and testing, we're confident the API is stable and ready for production use.
