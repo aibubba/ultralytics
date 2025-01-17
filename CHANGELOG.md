@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2025-01-17
+
+### Changed
+- Updated examples to use `ultralytics` npm package instead of local file references
+- Updated all Node.js version requirements to 18+ in documentation
+- Added npm badge and installation instructions to README
+- Added prerequisites sections to example READMEs
+
 ## [1.1.0] - 2025-01-15
 
 ### Added

@@ -1,7 +1,7 @@
 # Ultralytics
 
 [![npm](https://img.shields.io/npm/v/ultralytics.svg)](https://www.npmjs.com/package/ultralytics)
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/aibubba/ultralytics/releases)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/aibubba/ultralytics/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Tests](https://github.com/aibubba/ultralytics/workflows/Tests/badge.svg)](https://github.com/aibubba/ultralytics/actions)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
