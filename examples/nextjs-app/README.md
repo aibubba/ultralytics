@@ -10,12 +10,20 @@ This example demonstrates how to integrate Ultralytics analytics into a Next.js 
 - Client-side only initialization (no SSR issues)
 - TypeScript support
 
+## Prerequisites
+
+1. A running Ultralytics server (see main README for setup)
+2. A valid API key from your Ultralytics server
+3. Node.js 18+ installed
+
 ## Setup
 
 1. Install dependencies:
    ```bash
    npm install
    ```
+
+   This will install all dependencies including the `ultralytics` package from npm.
 
 2. Create a `.env.local` file:
    ```

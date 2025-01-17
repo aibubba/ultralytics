@@ -106,7 +106,7 @@ function AppContent() {
       </main>
       
       <footer>
-        <p>Built with React and Ultralytics v0.4.0</p>
+        <p>Built with React and Ultralytics v1.0.0</p>
       </footer>
     </div>
   );

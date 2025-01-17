@@ -13,7 +13,7 @@ This example application demonstrates how to integrate Ultralytics analytics int
 
 1. A running Ultralytics server
 2. A valid API key from your Ultralytics server
-3. Node.js 14+ installed
+3. Node.js 18+ installed
 
 ## Setup
 
@@ -22,6 +22,8 @@ This example application demonstrates how to integrate Ultralytics analytics int
 ```bash
 npm install
 ```
+
+This will install all dependencies including the `ultralytics` package from npm.
 
 2. Configure your environment:
 
