@@ -20,21 +20,18 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Check versions
+      - name: Check versions and env
         run: |
           node --version
           npm --version
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL:-not set}"
+          echo "GITHUB_ACTIONS: ${GITHUB_ACTIONS:-not set}"
 
       - name: Install dependencies
         run: npm install
 
       - name: Build
         run: npm run build
-
-      - name: Configure npm for OIDC
-        run: |
-          echo "registry=https://registry.npmjs.org/" > ~/.npmrc
-          cat ~/.npmrc
 
       - name: Publish to NPM with provenance
         run: npm publish --provenance --access public
