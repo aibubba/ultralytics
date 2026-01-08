@@ -31,10 +31,10 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Clear any existing npm auth
+      - name: Configure npm for OIDC
         run: |
-          rm -f ~/.npmrc
-          npm config set registry https://registry.npmjs.org/
+          echo "registry=https://registry.npmjs.org/" > ~/.npmrc
+          cat ~/.npmrc
 
       - name: Publish to NPM with provenance
         run: npm publish --provenance --access public
